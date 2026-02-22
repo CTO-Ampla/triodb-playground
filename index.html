@@ -1,0 +1,3986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrioDB — Playground</title>
+<style>
+/* ========== LOCAL FONTS ========== */
+@font-face { font-family: 'Outfit'; font-weight: 300; src: url('fonts/Outfit-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Outfit'; font-weight: 400; src: url('fonts/Outfit-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Outfit'; font-weight: 500; src: url('fonts/Outfit-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Outfit'; font-weight: 600; src: url('fonts/Outfit-SemiBold.ttf') format('truetype'); }
+@font-face { font-family: 'Outfit'; font-weight: 700; src: url('fonts/Outfit-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Outfit'; font-weight: 800; src: url('fonts/Outfit-ExtraBold.ttf') format('truetype'); }
+@font-face { font-family: 'Outfit'; font-weight: 900; src: url('fonts/Outfit-Black.ttf') format('truetype'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: url('fonts/JetBrainsMono-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 500; src: url('fonts/JetBrainsMono-Medium.ttf') format('truetype'); }
+
+/* ========== DESIGN SYSTEM ========== */
+:root {
+  --bg-deep: #070b14;
+  --bg-surface: #0c1222;
+  --bg-card: #111827;
+  --bg-card-hover: #162036;
+  --blue-primary: #2196F3;
+  --blue-bright: #42a5f5;
+  --blue-glow: #1e88e5;
+  --cyan-accent: #4dd0e1;
+  --cyan-dim: #26c6da;
+  --text-primary: #e8edf5;
+  --text-secondary: #8899b4;
+  --text-dim: #556680;
+  --border-subtle: rgba(33, 150, 243, 0.12);
+  --border-glow: rgba(33, 150, 243, 0.3);
+  --gradient-blue: linear-gradient(135deg, #1565c0, #42a5f5);
+  --font-display: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+  --left-width: 320px;
+  --right-width: 42%;
+  --header-height: 52px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font-display);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========== NOISE + GRID ========== */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  /* background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); */
+  pointer-events: none; z-index: 9999;
+}
+.grid-bg {
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(33,150,243,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33,150,243,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none; z-index: 0;
+}
+
+/* ========== HEADER ========== */
+.header {
+  height: var(--header-height);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.25rem;
+  background: rgba(7,11,20,0.85);
+  border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: blur(16px);
+  position: relative; z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 0.75rem; }
+.header-left img { height: 26px; }
+.header-left h1 {
+  font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em;
+  background: linear-gradient(135deg, var(--blue-bright), var(--cyan-accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.header-left .sep { width: 1px; height: 20px; background: var(--border-glow); margin: 0 0.25rem; }
+.header-left .label { font-size: 0.8rem; color: var(--text-dim); font-weight: 500; }
+
+.tab-group { display: flex; gap: 0.5rem; }
+.tab-btn {
+  padding: 0.35rem 1rem; border: 1px solid var(--border-subtle); border-radius: 6px; cursor: pointer;
+  font-family: var(--font-display); font-size: 0.8rem; font-weight: 600;
+  color: var(--text-secondary); background: var(--bg-card); transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--text-primary); border-color: var(--border-glow); background: var(--bg-card-hover); }
+.tab-btn.active { background: var(--blue-primary); color: white; border-color: var(--blue-primary); }
+
+.header-right { display: flex; align-items: center; gap: 0.5rem; }
+.btn-action {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.35rem 0.8rem; border: 1px solid var(--border-subtle); border-radius: 6px;
+  background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
+  font-family: var(--font-display); font-size: 0.75rem; font-weight: 500; transition: all 0.2s;
+}
+.btn-action:hover { border-color: var(--border-glow); color: var(--text-primary); background: var(--bg-card-hover); }
+.btn-action svg { width: 14px; height: 14px; }
+
+#statusBar {
+  font-size: 0.7rem; color: var(--text-dim); padding: 0 0.5rem;
+  max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#statusBar.ready { color: #4ade80; }
+#statusBar.error { color: #f87171; }
+#statusBar.loading { color: var(--cyan-accent); }
+
+/* ========== MAIN LAYOUT ========== */
+.main {
+  display: flex; height: calc(100vh - var(--header-height));
+  position: relative; z-index: 1;
+}
+
+/* ========== LEFT DRAWER ========== */
+.left-drawer {
+  width: var(--left-width); min-width: 200px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  display: flex; flex-direction: column;
+  overflow: hidden; position: relative; flex-shrink: 0;
+}
+.left-drawer-header {
+  padding: 0.75rem 1rem 0.5rem;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--blue-primary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.left-drawer-body {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+}
+
+/* Feature Tour search */
+.tour-search {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tour-search input {
+  width: 100%; padding: 0.4rem 0.6rem; border: 1px solid var(--border-subtle);
+  border-radius: 6px; background: var(--bg-card); color: var(--text-primary);
+  font-family: var(--font-display); font-size: 0.78rem;
+  outline: none; transition: border-color 0.2s;
+}
+.tour-search input:focus { border-color: var(--blue-primary); }
+.tour-search input::placeholder { color: var(--text-dim); }
+
+/* Lesson category sections */
+.lesson-cat-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.55rem 0.75rem; position: sticky; top: 0; z-index: 2;
+  background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-dim); user-select: none;
+  cursor: pointer; transition: background 0.15s;
+}
+.lesson-cat-header:hover { background: var(--bg-card); }
+.lesson-cat-header .cat-icon { font-size: 0.85rem; }
+.lesson-cat-header .cat-arrow {
+  font-size: 0.55rem; color: var(--text-dim); transition: transform 0.2s;
+  margin-left: 0.15rem;
+}
+.lesson-cat-header.open .cat-arrow { transform: rotate(90deg); }
+.lesson-cat-header .cat-count {
+  margin-left: auto; font-size: 0.6rem; font-weight: 500;
+  background: rgba(33,150,243,0.08); padding: 1px 5px; border-radius: 8px;
+}
+.lesson-cat-items {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+  opacity: 0;
+}
+.lesson-cat-header.open + .lesson-cat-items {
+  max-height: 2000px; opacity: 1;
+  transition: max-height 0.35s ease-in, opacity 0.2s ease-in;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Lesson cards */
+.lesson-item {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  padding: 0.55rem 0.75rem; cursor: pointer;
+  border-left: 3px solid transparent; transition: all 0.15s;
+}
+.lesson-item:hover { background: var(--bg-card); }
+.lesson-item.active {
+  background: rgba(33,150,243,0.08); border-left-color: var(--blue-primary);
+}
+.lesson-item .lesson-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  background: var(--text-dim); margin-top: 0.35rem;
+}
+.lesson-item .lesson-dot.pass { background: #4ade80; }
+.lesson-item .lesson-dot.fail { background: #f87171; }
+.lesson-item .lesson-dot.partial { background: #fbbf24; }
+.lesson-info { flex: 1; min-width: 0; }
+.lesson-info .lesson-title {
+  font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+  line-height: 1.3; margin-bottom: 0.1rem;
+}
+.lesson-info .lesson-subtitle {
+  font-size: 0.7rem; color: var(--cyan-accent); line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lesson-item.active .lesson-title { color: var(--blue-bright); }
+.lesson-item.disabled { opacity: 0.4; pointer-events: none; }
+
+/* Monaco left drawer: DB explorer + Function reference */
+.drawer-split { display: flex; flex-direction: column; height: 100%; }
+.drawer-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.drawer-section + .drawer-section { border-top: none; }
+.drawer-resize-v {
+  height: 5px; cursor: row-resize; flex-shrink: 0;
+  background: transparent; transition: background 0.15s;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.drawer-resize-v:hover, .drawer-resize-v.active { background: var(--blue-primary); }
+.drawer-section-title {
+  padding: 0.6rem 1rem; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue-primary);
+  background: var(--bg-surface); flex-shrink: 0;
+}
+.drawer-section-body { flex: 1; overflow-y: auto; padding: 0; }
+
+.tree-table {
+  padding: 0.35rem 0.75rem; cursor: pointer;
+  display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 0.5rem;
+  font-size: 0.78rem; color: var(--text-secondary);
+  border-radius: 4px; margin: 1px 4px; transition: background 0.12s;
+}
+.tree-table:hover { background: var(--bg-card); }
+.tree-table .icon { color: var(--cyan-accent); font-size: 0.85rem; flex-shrink: 0; }
+.tree-table .arrow { font-size: 0.55rem; color: var(--text-dim); transition: transform 0.15s; }
+.tree-table.open .arrow { transform: rotate(90deg); }
+.tree-cols { margin: 0 4px 4px; border-left: 2px solid var(--border-subtle); margin-left: 18px; }
+.tree-col {
+  padding: 0.2rem 0.6rem 0.2rem 0.75rem; font-size: 0.72rem; color: var(--text-secondary);
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 0.4rem;
+}
+.tree-col:hover { background: rgba(33,150,243,0.04); }
+.tree-col .col-name { color: var(--text-primary); font-family: var(--font-mono); font-size: 0.72rem; }
+.tree-col .col-type { color: var(--text-dim); font-family: var(--font-mono); font-size: 0.64rem; opacity: 0.7; text-align: left; }
+.tree-col .col-badge {
+  font-size: 0.55rem; font-weight: 600; padding: 0.05rem 0.3rem; border-radius: 3px;
+  letter-spacing: 0.03em; flex-shrink: 0;
+}
+.tree-col .col-badge.pk { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.tree-col .col-badge.uq { background: rgba(168,85,247,0.15); color: #a855f7; }
+.tree-col .col-badge.nn { background: rgba(239,68,68,0.12); color: #f87171; }
+
+.fn-group-title {
+  padding: 0.45rem 0.75rem; font-size: 0.72rem; font-weight: 700;
+  color: var(--cyan-accent); text-transform: uppercase; letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
+  background: var(--bg-surface); position: sticky; top: 0; z-index: 1;
+  transition: background 0.12s;
+}
+.fn-group-title:hover { background: var(--bg-card); }
+.fn-group-title .fn-arrow { font-size: 0.55rem; color: var(--text-dim); transition: transform 0.15s; }
+.fn-group-title.open .fn-arrow { transform: rotate(90deg); }
+.fn-group-title .fn-count { margin-left: auto; font-size: 0.62rem; color: var(--text-dim); font-weight: 400; }
+.fn-group-items {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.25s ease-out, opacity 0.2s ease-out;
+  opacity: 0;
+}
+.fn-group-title.open + .fn-group-items {
+  max-height: 2000px; opacity: 1;
+  transition: max-height 0.35s ease-in, opacity 0.2s ease-in;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.fn-item {
+  padding: 0.3rem 0.75rem 0.3rem 1rem; cursor: pointer;
+  font-size: 0.72rem; font-family: var(--font-mono);
+  transition: background 0.12s; display: flex; align-items: baseline; gap: 0;
+}
+.fn-item:hover { background: var(--bg-card); }
+.fn-item .fn-name { color: var(--blue-bright); font-weight: 400; }
+.fn-item .fn-paren { color: var(--text-dim); }
+.fn-item .fn-param { color: var(--text-primary); }
+.fn-item .fn-param-type { color: var(--cyan-accent); font-size: 0.64rem; opacity: 0.8; margin-left: 0.15rem; }
+.fn-item .fn-ret { color: var(--text-dim); font-size: 0.64rem; margin-left: 0.2rem; }
+
+/* Function popup */
+.fn-popup {
+  position: absolute; bottom: 1rem;
+  background: var(--bg-surface); border: 1px solid var(--border-glow);
+  border-radius: 10px; padding: 1rem 1.25rem; z-index: 100;
+  left: 50%; transform: translateX(-50%);
+  max-width: 90%; width: max-content; min-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: fnPopupIn 0.2s ease-out;
+}
+@keyframes fnPopupIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.fn-popup-sig {
+  font-family: var(--font-mono); font-size: 0.85rem;
+  margin-bottom: 0.6rem; line-height: 1.5;
+  background: var(--bg-deep); border: 1px solid var(--border-subtle);
+  border-radius: 6px; padding: 0.5rem 0.75rem;
+}
+.fn-popup-sig .fn-kw { color: var(--blue-bright); font-weight: 400; }
+.fn-popup-sig .fn-pname { color: var(--text-primary); }
+.fn-popup-sig .fn-ptype { color: var(--cyan-accent); }
+.fn-popup-sig .fn-punct { color: var(--text-dim); }
+.fn-popup-sig .fn-ret-arrow { color: var(--text-dim); }
+.fn-popup-sig .fn-ret-type { color: #4ade80; font-weight: 400; }
+.fn-popup-desc {
+  font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6;
+  margin-bottom: 0.6rem;
+}
+.fn-popup-label {
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.3rem;
+}
+.fn-popup-example {
+  background: var(--bg-deep); border: 1px solid var(--border-subtle);
+  border-radius: 6px; padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-primary);
+  line-height: 1.5; overflow-x: auto; white-space: pre-wrap;
+}
+
+/* ========== MIDDLE PANEL ========== */
+.middle-panel {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;
+}
+
+/* Lesson detail middle */
+.feature-detail { flex: 1; overflow-y: auto; padding: 1.5rem 2rem; }
+.feature-placeholder {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; color: var(--text-dim); font-size: 0.95rem;
+}
+.lesson-header {
+  display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;
+}
+.lesson-cat-badge {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 0.2rem 0.55rem; border-radius: 4px;
+  background: rgba(33,150,243,0.12); color: var(--blue-bright);
+}
+.lesson-detail-title {
+  font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em;
+  margin-bottom: 0.2rem;
+}
+.lesson-detail-subtitle {
+  font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;
+  max-width: 700px; line-height: 1.5;
+}
+
+/* Lesson sections */
+.lesson-section { margin-bottom: 1.25rem; max-width: 740px; }
+.lesson-section-heading {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--cyan-accent); margin-bottom: 0.4rem;
+  padding-bottom: 0.3rem; border-bottom: 1px solid var(--border-subtle);
+}
+.lesson-section-body {
+  color: var(--text-secondary); font-size: 0.88rem; line-height: 1.7;
+}
+.lesson-section-body p { margin: 0 0 0.5rem; }
+.lesson-section-body code {
+  background: rgba(33,150,243,0.08); padding: 0.1rem 0.35rem;
+  border-radius: 3px; font-family: var(--font-mono); font-size: 0.82rem;
+  color: var(--cyan-accent);
+}
+.lesson-section-body ul {
+  margin: 0.25rem 0 0.5rem 1.25rem; padding: 0;
+}
+.lesson-section-body li { margin-bottom: 0.2rem; }
+
+/* Lesson examples divider */
+.examples-divider {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--blue-primary); margin: 1.5rem 0 1rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.examples-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border-subtle);
+}
+
+/* Example block */
+.example-block { margin-bottom: 1.5rem; max-width: 780px; }
+.example-title-row {
+  display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem;
+}
+.example-num {
+  font-size: 0.7rem; font-weight: 700; color: var(--blue-primary);
+  background: rgba(33,150,243,0.08); padding: 0.1rem 0.4rem; border-radius: 3px;
+}
+.example-title { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
+.example-explain {
+  font-size: 0.82rem; color: var(--text-dim); margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+/* Run All button */
+.btn-run-all {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.5rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;
+  background: linear-gradient(135deg, #1565c0, #4dd0e1); color: white;
+  font-family: var(--font-display); font-size: 0.82rem; font-weight: 600;
+  transition: all 0.2s; margin-bottom: 1rem;
+}
+.btn-run-all:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(77,208,225,0.3); }
+.btn-run-all:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-run-all svg { width: 14px; height: 14px; }
+
+/* SQL code block (Feature Tour) */
+.sql-block {
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: 12px; overflow: hidden; margin-bottom: 1rem;
+}
+.sql-block-header {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 1rem; background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.sql-dot { width: 9px; height: 9px; border-radius: 50%; }
+.sql-dot:nth-child(1) { background: #ff5f57; }
+.sql-dot:nth-child(2) { background: #ffbd2e; }
+.sql-dot:nth-child(3) { background: #28ca42; }
+.sql-block-header .lang {
+  margin-left: auto; font-size: 0.68rem; color: var(--text-dim); font-weight: 500;
+}
+.sql-body {
+  padding: 1rem 1.25rem; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.7;
+  white-space: pre-wrap; color: var(--text-primary);
+}
+/* SQL syntax colors */
+.sql-body .kw { color: #c792ea; }
+.sql-body .fn { color: #82aaff; }
+.sql-body .str { color: #c3e88d; }
+.sql-body .num { color: #f78c6c; }
+.sql-body .cm { color: #546e7a; font-style: italic; }
+.sql-body .op { color: #89ddff; }
+.sql-body .param { color: #ffcb6b; }
+
+.sql-block-footer {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border-top: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,0.15);
+}
+.btn-run {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.4rem 1.2rem; border: none; border-radius: 6px; cursor: pointer;
+  background: var(--gradient-blue); color: white;
+  font-family: var(--font-display); font-size: 0.8rem; font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-run:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(33,150,243,0.3); }
+.btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-run svg { width: 14px; height: 14px; }
+
+/* Monaco middle */
+.monaco-container {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+.editor-toolbar {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+#editorHost { flex: 1; min-height: 0; }
+
+/* ========== RIGHT PANEL ========== */
+.right-panel {
+  width: var(--right-width); min-width: 200px;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-subtle);
+  display: flex; flex-direction: column; overflow: hidden;
+  position: relative; flex-shrink: 0;
+}
+.right-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.6rem 1rem;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--blue-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.right-panel-header .btn-clear {
+  padding: 0.2rem 0.6rem; border: 1px solid var(--border-subtle);
+  border-radius: 4px; background: transparent; color: var(--text-dim);
+  cursor: pointer; font-size: 0.65rem; font-family: var(--font-display);
+}
+.right-panel-header .btn-clear:hover { border-color: var(--border-glow); color: var(--text-secondary); }
+.right-panel-body {
+  flex: 1; overflow-y: auto; padding: 0.5rem;
+}
+
+/* ========== RESULT TABLE (comparison table style) ========== */
+.result-block { margin-bottom: 1rem; overflow-x: auto; }
+.result-stmt {
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--blue-bright);
+  padding: 0.4rem 0.5rem; margin-bottom: 0.35rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.result-table {
+  border-collapse: collapse; font-size: 0.78rem;
+  margin-bottom: 0.25rem; min-width: 100%;
+}
+.result-table thead th {
+  padding: 0.55rem 0.75rem; text-align: left; font-weight: 600;
+  color: var(--text-secondary); border-bottom: 2px solid var(--border-glow);
+  font-size: 0.72rem; letter-spacing: 0.02em;
+  background: rgba(33,150,243,0.04);
+  white-space: nowrap; min-width: 80px;
+}
+.result-table tbody td {
+  padding: 0.45rem 0.75rem; border-bottom: 1px solid rgba(33,150,243,0.06);
+  color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.74rem;
+  white-space: nowrap; min-width: 80px;
+}
+.result-table tbody tr:nth-child(even) td { background: rgba(33,150,243,0.03); }
+.result-table tbody tr:nth-child(odd) td { background: transparent; }
+.result-table tbody tr:hover td { background: rgba(33,150,243,0.08); }
+.result-meta {
+  font-size: 0.68rem; color: var(--text-dim); padding: 0.2rem 0.5rem;
+  display: flex; gap: 1rem;
+}
+.result-pager {
+  display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+}
+.result-pager-btn {
+  padding: 0.15rem 0.5rem; border: 1px solid var(--border-subtle); border-radius: 4px;
+  background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
+  font-family: var(--font-display); font-size: 0.7rem; font-weight: 600;
+  transition: all 0.15s;
+}
+.result-pager-btn:hover:not(:disabled) { border-color: var(--border-glow); color: var(--text-primary); background: var(--bg-card-hover); }
+.result-pager-btn:disabled { opacity: 0.35; cursor: default; }
+.result-pager-info {
+  flex: 1; text-align: center; font-size: 0.68rem; color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+/* ========== RESIZE HANDLES ========== */
+.resize-handle {
+  position: absolute; top: 0; width: 5px; height: 100%;
+  cursor: col-resize; z-index: 10;
+  background: transparent; transition: background 0.15s;
+}
+.resize-handle:hover, .resize-handle.active {
+  background: var(--blue-primary);
+}
+.resize-handle-left { right: 0; }
+.resize-handle-right { left: 0; }
+
+.result-error {
+  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 8px; padding: 0.6rem 0.75rem; margin: 0.25rem 0;
+  font-family: var(--font-mono); font-size: 0.75rem; color: #f87171;
+  white-space: pre-wrap;
+}
+.result-info {
+  font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan-accent);
+  padding: 0.3rem 0.5rem;
+}
+.result-empty {
+  color: var(--text-dim); font-size: 0.78rem; padding: 0.4rem 0.5rem;
+  font-style: italic;
+}
+
+/* ========== LOADING OVERLAY ========== */
+.loading-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(7,11,20,0.92); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1.5rem;
+}
+.loading-overlay.hidden { display: none; }
+.loading-overlay img { height: 48px; }
+.loading-overlay .msg {
+  font-size: 0.95rem; color: var(--text-secondary); text-align: center;
+}
+.loading-bar-wrap {
+  width: 220px; height: 4px; border-radius: 2px;
+  background: rgba(33,150,243,0.12); overflow: hidden;
+}
+.loading-bar-fill {
+  height: 100%; width: 0%; border-radius: 2px;
+  background: var(--gradient-blue);
+  transition: width 0.3s ease;
+}
+.loading-spinner {
+  width: 32px; height: 32px; border: 3px solid var(--border-subtle);
+  border-top-color: var(--blue-primary); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ========== WELCOME MODAL ========== */
+.welcome-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(7,11,20,0.80); display: flex;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); opacity: 0;
+  animation: welcomeFadeIn 0.3s ease forwards;
+}
+.welcome-overlay.closing { animation: welcomeFadeOut 0.25s ease forwards; }
+@keyframes welcomeFadeIn { to { opacity: 1; } }
+@keyframes welcomeFadeOut { to { opacity: 0; } }
+.welcome-modal {
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: 12px; padding: 2rem 2.5rem; max-width: 520px; width: 90%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5); transform: scale(0.95);
+  animation: welcomeSlideIn 0.3s ease forwards;
+}
+.welcome-overlay.closing .welcome-modal { animation: welcomeSlideOut 0.25s ease forwards; }
+@keyframes welcomeSlideIn { to { transform: scale(1); } }
+@keyframes welcomeSlideOut { to { transform: scale(0.95); } }
+.welcome-logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+.welcome-logo img { height: 36px; }
+.welcome-logo span { font-size: 1.3rem; color: var(--text-primary); font-family: var(--font-display); }
+.welcome-title { font-size: 1rem; color: var(--cyan-accent); margin-bottom: 0.75rem; font-family: var(--font-display); }
+.welcome-body { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem; }
+.welcome-body .wh { color: var(--text-primary); }
+.welcome-features { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+.welcome-feat {
+  flex: 1; text-align: center; padding: 0.6rem 0.4rem;
+  border-radius: 8px; background: rgba(33,150,243,0.06);
+  border: 1px solid var(--border-subtle);
+}
+.welcome-feat-icon { font-size: 1.2rem; margin-bottom: 0.25rem; }
+.welcome-feat-label { font-size: 0.72rem; color: var(--text-secondary); }
+.welcome-btn {
+  display: block; width: 100%; padding: 0.6rem;
+  border: none; border-radius: 8px; cursor: pointer;
+  background: var(--gradient-blue); color: #fff;
+  font-family: var(--font-display); font-size: 0.85rem;
+  transition: opacity 0.15s;
+}
+.welcome-btn:hover { opacity: 0.9; }
+
+/* ========== BENCHMARK ========== */
+.toolbar-sep { width: 1px; height: 20px; background: var(--border-subtle); margin: 0 0.25rem; }
+.btn-bench {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.4rem 1rem; border: none; border-radius: 6px; cursor: pointer;
+  background: linear-gradient(135deg, #e65100, #ff9800); color: white;
+  font-family: var(--font-display); font-size: 0.8rem; font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-bench:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,152,0,0.3); }
+.btn-bench:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-bench svg { width: 14px; height: 14px; }
+.bench-label { font-size: 0.72rem; color: var(--text-dim); font-weight: 600; margin-left: 0.25rem; }
+.bench-input {
+  width: 72px; padding: 0.3rem 0.4rem; border: 1px solid var(--border-subtle);
+  border-radius: 4px; background: var(--bg-card); color: var(--text-primary);
+  font-family: var(--font-mono); font-size: 0.72rem; text-align: right;
+}
+.bench-input:focus { outline: none; border-color: var(--blue-primary); }
+
+.bench-header {
+  font-size: 0.85rem; font-weight: 700; color: var(--text-primary);
+  padding: 0.6rem 0.5rem 0.3rem; border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 0.5rem;
+}
+.bench-phase {
+  font-size: 0.78rem; font-weight: 600; color: var(--cyan-accent);
+  padding: 0.5rem 0.5rem 0.2rem;
+}
+.bench-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0.25rem 0.5rem; font-family: var(--font-mono); font-size: 0.75rem;
+}
+.bench-row .bench-label-col { color: var(--text-secondary); }
+.bench-row .bench-value { font-weight: 600; }
+.bench-row .bench-value.fast { color: #4ade80; }
+.bench-row .bench-value.medium { color: #fbbf24; }
+.bench-row .bench-value.slow { color: #f87171; }
+.bench-progress {
+  padding: 0.3rem 0.5rem; font-size: 0.72rem; color: var(--text-dim);
+  font-style: italic;
+}
+.bench-separator {
+  border: none; border-top: 1px solid var(--border-subtle);
+  margin: 0.5rem 0;
+}
+
+/* ========== MODE VISIBILITY ========== */
+.mode-tour, .mode-editor, .mode-viz { display: none; }
+body.tour-active .mode-tour { display: flex; }
+body.tour-active .mode-tour.col { display: flex; flex-direction: column; }
+body.editor-active .mode-editor { display: flex; }
+body.editor-active .mode-editor.col { display: flex; flex-direction: column; }
+body.viz-active .mode-viz { display: flex; }
+body.viz-active .mode-viz.col { display: flex; flex-direction: column; }
+
+/* Right panel slot switching */
+.mode-results { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.mode-viz-right { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+body.viz-active .mode-results { display: none; }
+body.viz-active .mode-viz-right { display: flex; }
+
+/* ========== DATA VISUALIZER ========== */
+.viz-subtab-bar {
+  display: flex; gap: 0.5rem; padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface); flex-shrink: 0;
+}
+.viz-subtab {
+  flex: 1; text-align: center;
+  padding: 0.3rem 0.75rem; border: 1px solid var(--border-subtle); border-radius: 6px;
+  cursor: pointer; font-family: var(--font-display); font-size: 0.75rem;
+  color: var(--text-secondary); background: transparent; transition: all 0.2s;
+}
+.viz-subtab:hover { color: var(--text-primary); border-color: var(--border-glow); }
+.viz-subtab.active { background: var(--blue-primary); color: white; border-color: var(--blue-primary); }
+
+/* Middle panels */
+.viz-panel { display: none; flex: 1; overflow: hidden; position: relative; min-height: 0; }
+.viz-panel.active { display: flex; flex-direction: column; }
+
+.viz-placeholder {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; color: var(--text-dim); font-size: 0.9rem;
+}
+.viz-data-content { flex: 1; overflow: auto; padding: 0.5rem; }
+
+/* Left/right drawer slot switching per sub-tab */
+.viz-left-slot, .viz-right-slot {
+  display: none; flex-direction: column; flex: 1; overflow: hidden;
+}
+.viz-left-slot.active, .viz-right-slot.active {
+  display: flex;
+}
+
+/* Left drawer table selection */
+.tree-table.viz-selected { border-left: 3px solid var(--blue-primary); background: rgba(33,150,243,0.08); }
+
+/* Edge cards */
+.edge-card {
+  padding: 0.6rem 0.75rem; margin: 0.25rem 0.5rem; border-radius: 6px;
+  border-left: 3px solid var(--text-dim); background: var(--bg-card);
+  cursor: pointer; transition: all 0.15s; user-select: none;
+}
+.edge-card:hover { background: var(--bg-card-hover); }
+.edge-card.inactive { opacity: 0.35; }
+.edge-card .edge-label { font-size: 0.78rem; color: var(--text-primary); }
+.edge-card .edge-route { font-size: 0.68rem; color: var(--text-dim); margin-top: 0.15rem; }
+.edge-card .edge-count { font-size: 0.65rem; color: var(--text-secondary); margin-top: 0.1rem; }
+
+/* Vector / Graph legend rows */
+.vec-field-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.75rem; cursor: pointer; transition: background 0.12s;
+  font-size: 0.78rem; color: var(--text-primary); user-select: none;
+}
+.vec-field-row:hover { background: var(--bg-card); }
+.vec-field-row.inactive { opacity: 0.35; }
+.vec-field-name { flex: 1; font-weight: 600; }
+.vec-field-count { font-size: 0.68rem; color: var(--text-dim); }
+.vec-field-swatch {
+  width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0;
+}
+
+/* Schema detail in right panel */
+.schema-section { margin-bottom: 0.75rem; }
+.schema-section-title {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--cyan-accent);
+  padding: 0.4rem 0.5rem 0.25rem; border-bottom: 1px solid var(--border-subtle);
+}
+.schema-field-row {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 0.4rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem; font-size: 0.74rem;
+}
+.schema-field-row:hover { background: rgba(33,150,243,0.04); }
+.schema-field-name { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-primary); }
+.schema-field-type { font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-dim); }
+.schema-idx-row {
+  padding: 0.3rem 0.5rem 0.3rem 0.75rem; font-size: 0.72rem;
+  font-family: var(--font-mono); color: var(--text-secondary);
+}
+.schema-idx-row:hover { background: rgba(33,150,243,0.04); }
+.schema-idx-badge {
+  display: inline-block; font-size: 0.55rem; font-weight: 600;
+  padding: 0.05rem 0.3rem; border-radius: 3px; letter-spacing: 0.03em;
+  margin-left: 0.3rem;
+}
+
+/* Config panel items */
+.viz-config-group { padding: 0.5rem 0.75rem; }
+.viz-config-label {
+  font-size: 0.68rem; font-weight: 500; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.3rem;
+}
+.viz-config-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0; font-size: 0.78rem; color: var(--text-secondary);
+}
+.viz-config-row label { flex: 1; cursor: pointer; }
+.viz-config-row input[type="range"] {
+  width: 80px; accent-color: var(--blue-primary);
+}
+.viz-config-select {
+  width: 100%; padding: 0.35rem 0.5rem; border: 1px solid var(--border-subtle); border-radius: 6px;
+  background: var(--bg-card); color: var(--text-primary); cursor: pointer;
+  font-family: var(--font-display); font-size: 0.75rem;
+  transition: all 0.15s; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238892a8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+.viz-config-select:hover { border-color: var(--border-glow); }
+.viz-config-select:focus { outline: none; border-color: var(--blue-primary); }
+.viz-config-select option { background: var(--bg-deep); color: var(--text-primary); }
+.viz-config-btn {
+  display: block; width: 100%; padding: 0.4rem 0.75rem; margin-top: 0.3rem;
+  border: 1px solid var(--border-subtle); border-radius: 6px;
+  background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
+  font-family: var(--font-display); font-size: 0.75rem;
+  transition: all 0.15s; text-align: center;
+}
+.viz-config-btn:hover { border-color: var(--border-glow); color: var(--text-primary); background: var(--bg-card-hover); }
+.viz-config-btn.active { border-color: var(--blue-primary); color: var(--cyan-accent); background: rgba(33,150,243,0.1); }
+.viz-focus-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.6rem;
+  border-radius: 6px; background: rgba(33,150,243,0.12); border: 1px solid rgba(33,150,243,0.3);
+  font-size: 0.75rem; color: var(--cyan-accent); cursor: default;
+}
+.viz-focus-badge .viz-focus-x {
+  cursor: pointer; font-size: 0.85rem; color: var(--text-dim); margin-left: 0.2rem;
+}
+.viz-focus-badge .viz-focus-x:hover { color: var(--text-primary); }
+
+/* Graph/vector canvas */
+.viz-canvas {
+  display: block; width: 100%; height: 100%;
+  background: var(--bg-deep);
+}
+
+/* Canvas controls toolbar */
+.viz-controls {
+  position: absolute; bottom: 0.75rem; right: 0.75rem; z-index: 5;
+  display: flex; gap: 3px; background: rgba(12,18,34,0.85);
+  border: 1px solid var(--border-subtle); border-radius: 6px; padding: 3px;
+  backdrop-filter: blur(8px);
+}
+.viz-ctrl-btn {
+  width: 28px; height: 28px; border: none; border-radius: 4px;
+  background: transparent; color: var(--text-secondary); cursor: pointer;
+  font-size: 1rem; font-family: var(--font-display); font-weight: 600;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.viz-ctrl-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+
+/* ========== SCROLLBAR ========== */
+/* ========== GLOBAL SCROLLBAR ========== */
+* { scrollbar-width: thin; scrollbar-color: var(--border-glow) transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-glow); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--blue-primary); }
+::-webkit-scrollbar-corner { background: transparent; }
+</style>
+</head>
+<body class="tour-active">
+<div class="grid-bg"></div>
+
+<!-- Welcome modal -->
+<div class="welcome-overlay" id="welcomeOverlay" style="display:none">
+  <div class="welcome-modal">
+    <div class="welcome-logo">
+      <img src="TrioDB-logo.png" alt="TrioDB" />
+      <span>TrioDB WASM Edition</span>
+    </div>
+    <div class="welcome-title">Welcome to the Interactive Playground</div>
+    <div class="welcome-body">
+      <span class="wh">TrioDB</span> is a unified multi-engine embedded database that combines
+      <span class="wh">SQL</span>, <span class="wh">Graph</span>, and <span class="wh">Vector</span> queries on a single storage engine.
+      This edition is compiled to WebAssembly, letting you run the full database directly in your browser with no server required.
+      <br><br>
+      Designed for <span class="wh">agentic workflows</span>, TrioDB lets you combine structured data with graph
+      traversals and vector similarity in a single query, enabling RAG applications to reach a new
+      dimension of context and accuracy.
+      <br><br>
+      Explore TrioDB through guided lessons, write and execute live queries,
+      and visualize your data as tables, force-directed graphs, and 3D vector clouds.
+    </div>
+    <div class="welcome-features">
+      <div class="welcome-feat">
+        <div class="welcome-feat-icon">SQL</div>
+        <div class="welcome-feat-label">Relational queries</div>
+      </div>
+      <div class="welcome-feat">
+        <div class="welcome-feat-icon">GRAPH</div>
+        <div class="welcome-feat-label">MATCH traversals</div>
+      </div>
+      <div class="welcome-feat">
+        <div class="welcome-feat-icon">VECTOR</div>
+        <div class="welcome-feat-label">Similarity search</div>
+      </div>
+    </div>
+    <button class="welcome-btn" onclick="closeWelcome()">Start Exploring</button>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <img src="TrioDB-logo.png" alt="TrioDB" />
+  <div class="loading-spinner"></div>
+  <div class="msg" id="loadingMsg">Booting TrioDB WASM Edition...</div>
+  <div class="loading-bar-wrap"><div class="loading-bar-fill" id="loadingBar"></div></div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <img src="TrioDB-logo.png" alt="TrioDB" />
+    <h1>Playground</h1>
+    <div class="sep"></div>
+    <div class="tab-group">
+      <button class="tab-btn active" data-mode="tour" onclick="switchMode('tour')">Feature Tour</button>
+      <button class="tab-btn" data-mode="editor" onclick="switchMode('editor')">Editor</button>
+      <button class="tab-btn" data-mode="viz" onclick="switchMode('viz')">Data Visualizer</button>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="statusBar" class="loading">Loading...</span>
+    <button class="btn-action" id="saveBtn" title="Save .triodb file" onclick="saveToFile()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save
+    </button>
+    <button class="btn-action" id="loadBtn" title="Load .triodb file" onclick="loadFromFile()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Load
+    </button>
+  </div>
+</div>
+
+<!-- Main layout -->
+<div class="main">
+  <!-- LEFT DRAWER: Feature Tour -->
+  <div class="left-drawer mode-tour" id="tourDrawer">
+    <div class="resize-handle resize-handle-left" data-resize="left-tour"></div>
+  </div>
+
+  <!-- LEFT DRAWER: Monaco Editor -->
+  <div class="left-drawer mode-editor" id="editorDrawer">
+    <div class="resize-handle resize-handle-left" data-resize="left-editor"></div>
+    <div class="drawer-split">
+      <div class="drawer-section">
+        <div class="drawer-section-title">Table Schema</div>
+        <div class="drawer-section-body" id="dbExplorer"></div>
+      </div>
+      <div class="drawer-resize-v" id="drawerResizeV"></div>
+      <div class="drawer-section">
+        <div class="drawer-section-title">Function Reference</div>
+        <div class="drawer-section-body" id="fnReference"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIDDLE: Feature Tour -->
+  <div class="middle-panel mode-tour col" id="tourMiddle">
+    <div class="feature-detail" id="featureDetail">
+      <div class="feature-placeholder">Select a lesson from the left panel to explore</div>
+    </div>
+  </div>
+
+  <!-- MIDDLE: Monaco Editor -->
+  <div class="middle-panel mode-editor col" id="editorMiddle">
+    <div class="monaco-container">
+      <div class="editor-toolbar">
+        <button class="btn-run" id="editorRunBtn" onclick="runEditorSQL()" disabled>
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Run
+        </button>
+        <button class="btn-action" onclick="clearResults()">Clear Results</button>
+        <div class="toolbar-sep"></div>
+        <button class="btn-bench" id="benchBtn" onclick="runBenchmark()" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Benchmark
+        </button>
+        <label class="bench-label" for="batchInput">Rows/tx:</label>
+        <input type="number" id="batchInput" class="bench-input" value="50000" min="1000" max="500000" step="10000" title="Rows per transaction">
+        <span style="flex:1"></span>
+        <span style="font-size:0.68rem;color:var(--text-dim)">Ctrl+Enter to run</span>
+      </div>
+      <div id="editorHost"></div>
+    </div>
+  </div>
+
+  <!-- LEFT DRAWER: Data Visualizer -->
+  <div class="left-drawer mode-viz" id="vizDrawer">
+    <div class="resize-handle resize-handle-left" data-resize="left-viz"></div>
+    <div class="viz-subtab-bar" style="padding:0.4rem 0.5rem">
+      <button class="viz-subtab active" data-viz="data" onclick="switchVizTab('data')">Data</button>
+      <button class="viz-subtab" data-viz="graph" onclick="switchVizTab('graph')">Graph</button>
+      <button class="viz-subtab" data-viz="vectors" onclick="switchVizTab('vectors')">Vectors</button>
+    </div>
+    <!-- Data sub-tab left: table list -->
+    <div class="viz-left-slot active" data-vizslot="data">
+      <div class="left-drawer-header">Tables</div>
+      <div class="left-drawer-body" id="vizTableList"></div>
+    </div>
+    <!-- Graph sub-tab left: config -->
+    <div class="viz-left-slot" data-vizslot="graph">
+      <div class="left-drawer-header">Graph Settings</div>
+      <div class="left-drawer-body" id="vizGraphConfig"></div>
+    </div>
+    <!-- Vector sub-tab left: settings -->
+    <div class="viz-left-slot" data-vizslot="vectors">
+      <div class="left-drawer-header">Vector Settings</div>
+      <div class="left-drawer-body" id="vizVecConfig"></div>
+    </div>
+  </div>
+
+  <!-- MIDDLE: Data Visualizer -->
+  <div class="middle-panel mode-viz col" id="vizMiddle">
+    <div class="viz-panel active" id="vizDataPanel">
+      <div class="viz-placeholder" id="vizDataPlaceholder">Select a table from the left panel to browse data</div>
+      <div class="viz-data-content" id="vizDataContent" style="display:none"></div>
+    </div>
+    <div class="viz-panel" id="vizGraphPanel">
+      <canvas id="vizGraphCanvas" class="viz-canvas"></canvas>
+    </div>
+    <div class="viz-panel" id="vizVectorsPanel">
+      <canvas id="vizVecCanvas" class="viz-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL (shared) -->
+  <div class="right-panel">
+    <div class="resize-handle resize-handle-right" data-resize="right"></div>
+    <div class="mode-results">
+      <div class="right-panel-header">
+        <span>Results</span>
+        <button class="btn-clear" onclick="clearResults()">Clear</button>
+      </div>
+      <div class="right-panel-body" id="resultsPanel"></div>
+    </div>
+    <div class="mode-viz-right">
+      <!-- Data sub-tab right: schema detail -->
+      <div class="viz-right-slot active" data-vizslot="data">
+        <div class="right-panel-header"><span>Schema Detail</span></div>
+        <div class="right-panel-body" id="vizSchemaDetail">
+          <div class="viz-placeholder" style="font-size:0.82rem">Select a table to view schema</div>
+        </div>
+      </div>
+      <!-- Graph sub-tab right: edge types -->
+      <div class="viz-right-slot" data-vizslot="graph">
+        <div class="right-panel-header"><span>Edge Types</span></div>
+        <div class="right-panel-body" id="vizEdgePanel"></div>
+      </div>
+      <!-- Vector sub-tab right: series legend -->
+      <div class="viz-right-slot" data-vizslot="vectors">
+        <div class="right-panel-header"><span>Series Legend</span></div>
+        <div class="right-panel-body" id="vizVecLegend"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="playground-data.js"></script>
+<script type="module">
+// ============================================================
+// TrioDB Playground — Application Logic
+// ============================================================
+import { dotnet } from './_framework/dotnet.js';
+
+let db = null;
+let monacoEditor = null;
+let monacoLoaded = false;
+const lessonStatus = {}; // lessonId -> { exIdx: 'pass'|'fail' }
+let currentLesson = null;
+
+// ── Helpers ──────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+function yieldUI() { return new Promise(r => setTimeout(r, 0)); }
+
+// ── SQL Statement Splitter ──────────────────────────────────
+function splitStatements(sql) {
+  const stmts = [];
+  let cur = '', inStr = false, inComment = false;
+  for (let i = 0; i < sql.length; i++) {
+    const c = sql[i];
+    if (inComment) { if (c === '\n') inComment = false; continue; }
+    if (!inStr && c === '-' && sql[i+1] === '-') { inComment = true; i++; continue; }
+    if (c === "'" && !inStr) { inStr = true; cur += c; continue; }
+    if (c === "'" && inStr) {
+      if (sql[i+1] === "'") { cur += "''"; i++; continue; }
+      inStr = false; cur += c; continue;
+    }
+    if (c === ';' && !inStr) {
+      const t = cur.trim();
+      if (t.length > 0) stmts.push(t);
+      cur = ''; continue;
+    }
+    cur += c;
+  }
+  const last = cur.trim();
+  if (last.length > 0) stmts.push(last);
+  return stmts;
+}
+
+// ── SQL Syntax Highlighter (CSS-based for Feature Tour) ─────
+const SQL_KW = new Set([
+  'SELECT','FROM','WHERE','ORDER','BY','ASC','DESC','LIMIT','OFFSET',
+  'INSERT','INTO','VALUES','UPDATE','SET','DELETE','CREATE','DROP',
+  'TABLE','INDEX','IF','EXISTS','NOT','EDGE','MATCH','WITH','JOIN',
+  'INNER','LEFT','RIGHT','ON','AND','OR','IN','BETWEEN','LIKE','IS',
+  'NULL','AS','TRUE','FALSE','INT','BIGINT','FLOAT','DOUBLE','BOOL',
+  'TEXT','BLOB','DATETIME','VECTOR','PRIMARY','KEY','UNIQUE','DEFAULT',
+  'BTREE','GRAPH','TO','GROUP','USING','BACKUP','VACUUM','HAVING',
+  'DISTINCT','CASE','WHEN','THEN','ELSE','END','CONFLICT','DO',
+  'NOTHING','ALTER','ADD','COLUMN','CAST','OPTIONAL','REINDEX',
+  'EXPLAIN','PRAGMA','OVER','PARTITION','ROWS','UNBOUNDED','PRECEDING',
+  'FOLLOWING','CURRENT','ROW','RECURSIVE','UNION','ALL','RENAME',
+  'TYPE','DATABASE','DATABASES','USE','SHOW','LISTEN','UNLISTEN',
+  'MATERIALIZED','REFRESH','VIEW','BEGIN','COMMIT','ROLLBACK',
+  'TRANSACTION','CROSS'
+]);
+const SQL_FN = new Set([
+  'COUNT','SUM','AVG','MIN','MAX','LENGTH','UPPER','LOWER','TRIM',
+  'LTRIM','RTRIM','SUBSTR','SUBSTRING','REPLACE','CONCAT','INSTR',
+  'REVERSE','ABS','ROUND','CEIL','CEILING','FLOOR','SQRT','POWER',
+  'POW','MOD','SIGN','LOG','LOG10','EXP','PI','RANDOM','NOW','DATE',
+  'TIME','YEAR','MONTH','DAY','HOUR','MINUTE','SECOND','TYPEOF',
+  'COALESCE','NULLIF','IIF','IFNULL','VECTOR_DISTANCE','VECTOR_DIMS',
+  'VECTOR_NORM','TEXT_MATCH','TEXT_SCORE','DEGREE','IN_DEGREE',
+  'OUT_DEGREE','PAGERANK','COMMUNITIES','SHORTEST_PATH','ROW_NUMBER',
+  'RANK','DENSE_RANK','NTILE','LAG','LEAD','FIRST_VALUE','LAST_VALUE',
+  'LEFT','RIGHT'
+]);
+
+function highlightSQL(sql) {
+  let html = '';
+  let i = 0;
+  while (i < sql.length) {
+    // Comments
+    if (sql[i] === '-' && sql[i+1] === '-') {
+      let end = sql.indexOf('\n', i);
+      if (end === -1) end = sql.length;
+      html += '<span class="cm">' + escHtml(sql.slice(i, end)) + '</span>';
+      i = end; continue;
+    }
+    // Strings
+    if (sql[i] === "'") {
+      let j = i + 1;
+      while (j < sql.length) {
+        if (sql[j] === "'" && sql[j+1] === "'") { j += 2; continue; }
+        if (sql[j] === "'") { j++; break; }
+        j++;
+      }
+      html += '<span class="str">' + escHtml(sql.slice(i, j)) + '</span>';
+      i = j; continue;
+    }
+    // Parameters
+    if (sql[i] === '@') {
+      let j = i + 1;
+      while (j < sql.length && /[a-zA-Z0-9_]/.test(sql[j])) j++;
+      html += '<span class="param">' + escHtml(sql.slice(i, j)) + '</span>';
+      i = j; continue;
+    }
+    // Numbers
+    if (/[0-9]/.test(sql[i]) && (i === 0 || /[\s,=(+\-*/%<>!]/.test(sql[i-1]))) {
+      let j = i;
+      while (j < sql.length && /[0-9.]/.test(sql[j])) j++;
+      html += '<span class="num">' + escHtml(sql.slice(i, j)) + '</span>';
+      i = j; continue;
+    }
+    // Words (keywords/functions/identifiers)
+    if (/[a-zA-Z_]/.test(sql[i])) {
+      let j = i;
+      while (j < sql.length && /[a-zA-Z0-9_]/.test(sql[j])) j++;
+      const word = sql.slice(i, j);
+      const up = word.toUpperCase();
+      if (SQL_KW.has(up)) html += '<span class="kw">' + escHtml(word) + '</span>';
+      else if (SQL_FN.has(up)) html += '<span class="fn">' + escHtml(word) + '</span>';
+      else html += escHtml(word);
+      i = j; continue;
+    }
+    // Operators
+    if ('-<>=!*'.includes(sql[i])) {
+      html += '<span class="op">' + escHtml(sql[i]) + '</span>';
+      i++; continue;
+    }
+    html += escHtml(sql[i]);
+    i++;
+  }
+  return html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Result Table Renderer ───────────────────────────────────
+function renderResults(panel, stmt, rsHandle, t0) {
+  const block = document.createElement('div');
+  block.className = 'result-block';
+
+  const stmtEl = document.createElement('div');
+  stmtEl.className = 'result-stmt';
+  stmtEl.textContent = '> ' + stmt;
+  block.appendChild(stmtEl);
+
+  const colCount = db.api.ResultColumnCount(rsHandle);
+  const colNames = [];
+  for (let i = 0; i < colCount; i++) {
+    colNames.push(db.api.ResultGetColumnName(rsHandle, i) || `col${i}`);
+  }
+  const rows = [];
+  while (db.api.ResultRead(rsHandle)) {
+    const row = [];
+    for (let i = 0; i < colCount; i++) row.push(db.api.ResultGetText(rsHandle, i));
+    rows.push(row);
+  }
+  db.api.ResultClose(rsHandle);
+  const elapsed = (performance.now() - t0).toFixed(2);
+
+  if (rows.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'result-empty';
+    empty.textContent = '(no rows returned)';
+    block.appendChild(empty);
+  } else {
+    const PAGE_SIZE = 10;
+    const table = document.createElement('table');
+    table.className = 'result-table';
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    for (const col of colNames) {
+      const th = document.createElement('th');
+      th.textContent = col;
+      headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    block.appendChild(table);
+
+    let page = 0;
+    const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+
+    function renderPage() {
+      tbody.innerHTML = '';
+      const start = page * PAGE_SIZE;
+      const end = Math.min(start + PAGE_SIZE, rows.length);
+      for (let r = start; r < end; r++) {
+        const tr = document.createElement('tr');
+        for (let i = 0; i < colNames.length; i++) {
+          const td = document.createElement('td');
+          td.textContent = rows[r][i] ?? 'NULL';
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+      if (pagerInfo) pagerInfo.textContent = `${start + 1}-${end} of ${rows.length}`;
+      if (prevBtn) prevBtn.disabled = page === 0;
+      if (nextBtn) nextBtn.disabled = page >= totalPages - 1;
+    }
+
+    let pagerInfo = null, prevBtn = null, nextBtn = null;
+    if (totalPages > 1) {
+      const pager = document.createElement('div');
+      pager.className = 'result-pager';
+      prevBtn = document.createElement('button');
+      prevBtn.className = 'result-pager-btn'; prevBtn.textContent = '\u2039 Prev';
+      prevBtn.addEventListener('click', () => { if (page > 0) { page--; renderPage(); } });
+      pagerInfo = document.createElement('span');
+      pagerInfo.className = 'result-pager-info';
+      nextBtn = document.createElement('button');
+      nextBtn.className = 'result-pager-btn'; nextBtn.textContent = 'Next \u203A';
+      nextBtn.addEventListener('click', () => { if (page < totalPages - 1) { page++; renderPage(); } });
+      pager.appendChild(prevBtn); pager.appendChild(pagerInfo); pager.appendChild(nextBtn);
+      block.appendChild(pager);
+    }
+    renderPage();
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'result-meta';
+  meta.innerHTML = `<span>${rows.length} row(s)</span><span>${elapsed}ms</span>`;
+  block.appendChild(meta);
+
+  panel.appendChild(block);
+  return rows.length;
+}
+
+function renderError(panel, stmt, errMsg) {
+  const block = document.createElement('div');
+  block.className = 'result-block';
+  const stmtEl = document.createElement('div');
+  stmtEl.className = 'result-stmt';
+  stmtEl.textContent = '> ' + stmt;
+  block.appendChild(stmtEl);
+  const errEl = document.createElement('div');
+  errEl.className = 'result-error';
+  errEl.textContent = errMsg;
+  block.appendChild(errEl);
+  panel.appendChild(block);
+}
+
+function renderExecResult(panel, stmt, payload, elapsed) {
+  const block = document.createElement('div');
+  block.className = 'result-block';
+  const stmtEl = document.createElement('div');
+  stmtEl.className = 'result-stmt';
+  stmtEl.textContent = '> ' + stmt;
+  block.appendChild(stmtEl);
+  const info = document.createElement('div');
+  info.className = 'result-info';
+  info.textContent = `${payload} row(s) affected (${elapsed}ms)`;
+  block.appendChild(info);
+  panel.appendChild(block);
+}
+
+function renderDbList(panel, stmt, payload, elapsed) {
+  const block = document.createElement('div');
+  block.className = 'result-block';
+  const stmtEl = document.createElement('div');
+  stmtEl.className = 'result-stmt';
+  stmtEl.textContent = '> ' + stmt;
+  block.appendChild(stmtEl);
+  const names = payload.split(',').filter(n => n);
+  const table = document.createElement('table');
+  table.className = 'result-table';
+  table.innerHTML = '<thead><tr><th>database_name</th></tr></thead>';
+  const tbody = document.createElement('tbody');
+  for (const n of names) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.textContent = n;
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  block.appendChild(table);
+  const meta = document.createElement('div');
+  meta.className = 'result-meta';
+  meta.innerHTML = `<span>${names.length} database(s)</span><span>${elapsed}ms</span>`;
+  block.appendChild(meta);
+  panel.appendChild(block);
+}
+
+// ── Run SQL (shared between both modes) ──────────────────────
+function executeSqlToPanel(sql, panel, paramsObj) {
+  const statements = splitStatements(sql);
+  let success = true;
+
+  for (const stmt of statements) {
+    const t0 = performance.now();
+    let result;
+
+    if (paramsObj && Object.keys(paramsObj).length > 0 && stmt.includes('@')) {
+      const ph = db.api.CreateParams();
+      for (const [key, val] of Object.entries(paramsObj)) {
+        if (val.startsWith('[')) {
+          db.api.ParamSetVector(ph, key, val);
+        } else if (!isNaN(val)) {
+          db.api.ParamSetFloat(ph, key, parseFloat(val));
+        } else {
+          db.api.ParamSetText(ph, key, val);
+        }
+      }
+      // Determine if query or execute
+      const upper = stmt.toUpperCase().trimStart();
+      if (upper.startsWith('SELECT') || upper.startsWith('EXPLAIN') || upper.startsWith('PRAGMA') || upper.startsWith('WITH')) {
+        const rsHandle = db.api.QueryWithParams(db.handle, stmt, ph);
+        if (rsHandle > 0) {
+          renderResults(panel, stmt, rsHandle, t0);
+        } else {
+          renderError(panel, stmt, db.api.GetLastError());
+          success = false;
+        }
+      } else {
+        result = 'X:' + db.api.ExecuteWithParams(db.handle, stmt, ph);
+      }
+      db.api.ParamsClose(ph);
+      if (result) {
+        const tag = result.substring(0, 2);
+        const payload = result.substring(2);
+        const elapsed = (performance.now() - t0).toFixed(2);
+        if (tag === 'X:') renderExecResult(panel, stmt, payload, elapsed);
+        else renderError(panel, stmt, payload);
+      }
+      continue;
+    }
+
+    result = db.api.RunSql(db.handle, stmt);
+    const tag = result.substring(0, 2);
+    const payload = result.substring(2);
+    const elapsed = (performance.now() - t0).toFixed(2);
+
+    if (tag === 'Q:') {
+      renderResults(panel, stmt, parseInt(payload), t0);
+    } else if (tag === 'X:') {
+      renderExecResult(panel, stmt, payload, elapsed);
+    } else if (tag === 'D:') {
+      renderDbList(panel, stmt, payload, elapsed);
+    } else if (tag === 'S:') {
+      const newHandle = parseInt(payload);
+      if (newHandle > 0) db.handle = newHandle;
+      const info = document.createElement('div');
+      info.className = 'result-info';
+      info.textContent = `Switched to '${db.api.GetCurrentDatabase()}' (${elapsed}ms)`;
+      panel.appendChild(info);
+    } else if (tag === 'E:') {
+      renderError(panel, stmt, payload);
+      success = false;
+    }
+
+    // Auto-refresh language service after DDL
+    if (typeof db.api.RefreshLanguageService === 'function') {
+      const upperStmt = stmt.toUpperCase().trimStart();
+      if (upperStmt.startsWith('CREATE') || upperStmt.startsWith('DROP') || upperStmt.startsWith('ALTER')) {
+        try { db.api.RefreshLanguageService(db.handle); } catch(e) { /* ignore */ }
+      }
+    }
+  }
+  return success;
+}
+
+// ── Clear Results ────────────────────────────────────────────
+window.clearResults = function() {
+  $('resultsPanel').innerHTML = '';
+};
+
+// ── Panel Resize ─────────────────────────────────────────────
+document.querySelectorAll('.resize-handle').forEach(handle => {
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const type = handle.dataset.resize;
+    const isLeft = type.startsWith('left');
+    const panel = handle.parentElement;
+    handle.classList.add('active');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      if (isLeft) {
+        const w = ev.clientX - panel.getBoundingClientRect().left;
+        panel.style.width = Math.max(200, Math.min(w, 600)) + 'px';
+        // Sync both left drawers
+        document.querySelectorAll('.left-drawer').forEach(d => d.style.width = panel.style.width);
+      } else {
+        const w = panel.getBoundingClientRect().right - ev.clientX;
+        panel.style.width = Math.max(200, Math.min(w, window.innerWidth * 0.6)) + 'px';
+      }
+    }
+    function onUp() {
+      handle.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+});
+
+// Vertical resize between drawer sections
+const vHandle = document.getElementById('drawerResizeV');
+if (vHandle) {
+  vHandle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const split = vHandle.parentElement;
+    const top = vHandle.previousElementSibling;
+    const bot = vHandle.nextElementSibling;
+    vHandle.classList.add('active');
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    top.style.flex = 'none';
+    bot.style.flex = 'none';
+
+    function onMove(ev) {
+      const splitRect = split.getBoundingClientRect();
+      const y = ev.clientY - splitRect.top;
+      const h = splitRect.height - 5; // handle height
+      const topH = Math.max(60, Math.min(y, h - 60));
+      top.style.height = topH + 'px';
+      bot.style.height = (h - topH) + 'px';
+    }
+    function onUp() {
+      vHandle.classList.remove('active');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+// ── Mode Switching ───────────────────────────────────────────
+let vizInitialized = false;
+window.closeWelcome = function() {
+  const el = $('welcomeOverlay');
+  el.classList.add('closing');
+  setTimeout(() => { el.style.display = 'none'; }, 250);
+};
+
+window.switchMode = function(mode) {
+  if (mode === 'viz') document.body.className = 'viz-active';
+  else if (mode === 'editor') document.body.className = 'editor-active';
+  else document.body.className = 'tour-active';
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  // Editor: left drawer reset, middle + right split 50/50
+  const leftW = getComputedStyle(document.documentElement).getPropertyValue('--left-width').trim();
+  if (mode === 'editor') {
+    document.querySelectorAll('.left-drawer').forEach(d => d.style.width = leftW);
+    document.querySelectorAll('.right-panel').forEach(d => { d.style.width = ''; d.style.flex = '1'; });
+    document.querySelectorAll('.middle-panel').forEach(d => d.style.flex = '1');
+  } else {
+    document.querySelectorAll('.right-panel').forEach(d => { d.style.flex = ''; d.style.width = ''; });
+    document.querySelectorAll('.middle-panel').forEach(d => d.style.flex = '');
+  }
+  if (mode === 'viz') {
+    const lw = getComputedStyle(document.documentElement).getPropertyValue('--left-width').trim();
+    document.querySelectorAll('.left-drawer').forEach(d => d.style.width = lw);
+    document.querySelectorAll('.right-panel').forEach(d => { d.style.width = lw; d.style.flex = ''; });
+    document.querySelectorAll('.middle-panel').forEach(d => d.style.flex = '');
+  }
+  if (mode === 'editor' && !monacoLoaded) loadMonaco();
+  if (mode === 'viz' && !vizInitialized && db) { vizInitialized = true; initViz(); }
+};
+
+// ── Feature Tour: Build Left Drawer (Lessons) ───────────────
+function buildTourDrawer() {
+  const drawer = $('tourDrawer');
+  const header = document.createElement('div');
+  header.className = 'left-drawer-header';
+  header.textContent = `Lessons (${LESSONS.length})`;
+  drawer.appendChild(header);
+
+  // Search input
+  const searchDiv = document.createElement('div');
+  searchDiv.className = 'tour-search';
+  searchDiv.innerHTML = '<input type="text" id="lessonSearch" placeholder="Search lessons..." />';
+  drawer.appendChild(searchDiv);
+
+  const body = document.createElement('div');
+  body.className = 'left-drawer-body';
+  body.id = 'lessonListBody';
+
+  renderLessonList(body, '');
+  drawer.appendChild(body);
+
+  // Search handler
+  $('lessonSearch').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    body.innerHTML = '';
+    renderLessonList(body, q);
+  });
+}
+
+let firstCatRendered = false;
+
+function renderLessonList(body, query) {
+  firstCatRendered = false;
+  for (const cat of LESSON_CATEGORIES) {
+    const lessons = LESSONS.filter(l => {
+      if (l.cat !== cat.id) return false;
+      if (!query) return true;
+      return l.title.toLowerCase().includes(query) ||
+             l.subtitle.toLowerCase().includes(query) ||
+             cat.name.toLowerCase().includes(query);
+    });
+    if (lessons.length === 0) continue;
+
+    // Open first category by default, or all when searching
+    const shouldOpen = query || !firstCatRendered;
+    firstCatRendered = true;
+
+    const catHeader = document.createElement('div');
+    catHeader.className = 'lesson-cat-header' + (shouldOpen ? ' open' : '');
+    catHeader.innerHTML = `<span class="cat-arrow">&#9654;</span><span class="cat-icon">${cat.icon}</span><span>${cat.name}</span><span class="cat-count">${lessons.length}</span>`;
+    catHeader.addEventListener('click', () => {
+      const opening = !catHeader.classList.contains('open');
+      // Accordion: close all others
+      body.querySelectorAll('.lesson-cat-header.open').forEach(h => {
+        if (h !== catHeader) h.classList.remove('open');
+      });
+      catHeader.classList.toggle('open', opening);
+    });
+    body.appendChild(catHeader);
+
+    const itemsDiv = document.createElement('div');
+    itemsDiv.className = 'lesson-cat-items';
+
+    for (const lesson of lessons) {
+      const item = document.createElement('div');
+      item.className = 'lesson-item' + (currentLesson && currentLesson.id === lesson.id ? ' active' : '') + (lesson.disabled ? ' disabled' : '');
+      item.dataset.lessonId = lesson.id;
+
+      const dotClass = getLessonDotClass(lesson.id);
+      item.innerHTML = `<span class="lesson-dot ${dotClass}" id="ldot-${lesson.id}"></span>` +
+        `<div class="lesson-info"><div class="lesson-title">${escHtml(lesson.title)}</div>` +
+        `<div class="lesson-subtitle">${escHtml(lesson.subtitle)}</div></div>`;
+      if (!lesson.disabled) item.addEventListener('click', () => selectLesson(lesson));
+      itemsDiv.appendChild(item);
+    }
+    body.appendChild(itemsDiv);
+  }
+}
+
+function getLessonDotClass(lessonId) {
+  const s = lessonStatus[lessonId];
+  if (!s) return '';
+  const vals = Object.values(s);
+  if (vals.length === 0) return '';
+  const lesson = LESSONS.find(l => l.id === lessonId);
+  if (!lesson) return '';
+  const allRun = vals.length === lesson.examples.length;
+  const allPass = vals.every(v => v === 'pass');
+  const anyFail = vals.some(v => v === 'fail');
+  if (allRun && allPass) return 'pass';
+  if (anyFail) return 'fail';
+  if (vals.length > 0) return 'partial';
+  return '';
+}
+
+function updateLessonDot(lessonId) {
+  const dot = document.getElementById(`ldot-${lessonId}`);
+  if (dot) dot.className = 'lesson-dot ' + getLessonDotClass(lessonId);
+}
+
+function selectLesson(lesson) {
+  currentLesson = lesson;
+
+  // Highlight active item
+  document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+  const item = document.querySelector(`.lesson-item[data-lesson-id="${lesson.id}"]`);
+  if (item) item.classList.add('active');
+
+  const detail = $('featureDetail');
+  detail.innerHTML = '';
+
+  // Find category
+  const cat = LESSON_CATEGORIES.find(c => c.id === lesson.cat);
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className = 'lesson-header';
+  hdr.innerHTML = `<span class="lesson-cat-badge">${cat ? cat.icon + ' ' + cat.name : lesson.cat}</span>`;
+  detail.appendChild(hdr);
+
+  // Title
+  const title = document.createElement('div');
+  title.className = 'lesson-detail-title';
+  title.textContent = lesson.title;
+  detail.appendChild(title);
+
+  // Subtitle
+  const sub = document.createElement('div');
+  sub.className = 'lesson-detail-subtitle';
+  sub.textContent = lesson.subtitle;
+  detail.appendChild(sub);
+
+  // Sections
+  for (const sec of lesson.sections) {
+    const secDiv = document.createElement('div');
+    secDiv.className = 'lesson-section';
+    const heading = document.createElement('div');
+    heading.className = 'lesson-section-heading';
+    heading.textContent = sec.heading;
+    secDiv.appendChild(heading);
+    const body = document.createElement('div');
+    body.className = 'lesson-section-body';
+    body.innerHTML = sec.body;
+    secDiv.appendChild(body);
+    detail.appendChild(secDiv);
+  }
+
+  // Examples divider
+  const divider = document.createElement('div');
+  divider.className = 'examples-divider';
+  divider.textContent = `Examples (${lesson.examples.length})`;
+  detail.appendChild(divider);
+
+  // Run All button
+  const runAllBtn = document.createElement('button');
+  runAllBtn.className = 'btn-run-all';
+  runAllBtn.disabled = !db;
+  runAllBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run All Examples`;
+  runAllBtn.addEventListener('click', () => runAllExamples(lesson));
+  detail.appendChild(runAllBtn);
+
+  // Each example
+  lesson.examples.forEach((ex, idx) => {
+    const exBlock = document.createElement('div');
+    exBlock.className = 'example-block';
+
+    // Title row
+    const titleRow = document.createElement('div');
+    titleRow.className = 'example-title-row';
+    titleRow.innerHTML = `<span class="example-num">${idx + 1}</span><span class="example-title">${escHtml(ex.title)}</span>`;
+    exBlock.appendChild(titleRow);
+
+    // Explanation
+    const expl = document.createElement('div');
+    expl.className = 'example-explain';
+    expl.textContent = ex.explain;
+    exBlock.appendChild(expl);
+
+    // SQL block
+    const block = document.createElement('div');
+    block.className = 'sql-block';
+    block.innerHTML = `
+      <div class="sql-block-header">
+        <span class="sql-dot"></span><span class="sql-dot"></span><span class="sql-dot"></span>
+        <span class="lang">TrioDB SQL</span>
+      </div>
+      <div class="sql-body">${highlightSQL(ex.sql)}</div>
+      <div class="sql-block-footer">
+        <button class="btn-run" ${!db ? 'disabled' : ''}>
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Run
+        </button>
+        ${ex.params ? '<span style="font-size:0.68rem;color:var(--text-dim)">Params auto-injected</span>' : ''}
+      </div>`;
+    exBlock.appendChild(block);
+
+    // Run button handler
+    block.querySelector('.btn-run').addEventListener('click', () => {
+      const panel = $('resultsPanel');
+      panel.innerHTML = '';
+      const ok = executeSqlToPanel(ex.sql, panel, ex.params || {});
+      if (!lessonStatus[lesson.id]) lessonStatus[lesson.id] = {};
+      lessonStatus[lesson.id][idx] = ok ? 'pass' : 'fail';
+      updateLessonDot(lesson.id);
+    });
+
+    detail.appendChild(exBlock);
+  });
+
+  // Scroll to top
+  detail.scrollTop = 0;
+}
+
+function runAllExamples(lesson) {
+  const panel = $('resultsPanel');
+  panel.innerHTML = '';
+  if (!lessonStatus[lesson.id]) lessonStatus[lesson.id] = {};
+
+  lesson.examples.forEach((ex, idx) => {
+    // Add example header to results
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:0.78rem;font-weight:600;color:var(--cyan-accent);padding:0.4rem 0.5rem 0.2rem;';
+    hdr.textContent = `Example ${idx + 1}: ${ex.title}`;
+    panel.appendChild(hdr);
+
+    const ok = executeSqlToPanel(ex.sql, panel, ex.params || {});
+    lessonStatus[lesson.id][idx] = ok ? 'pass' : 'fail';
+  });
+
+  updateLessonDot(lesson.id);
+}
+
+// ── Monaco Editor ────────────────────────────────────────────
+function loadMonaco() {
+  monacoLoaded = true;
+  const script = document.createElement('script');
+  script.src = 'libs/monaco/min/vs/loader.js';
+  script.onload = () => {
+    require.config({ paths: { vs: 'libs/monaco/min/vs' } });
+    require(['vs/editor/editor.main'], () => {
+      initMonaco();
+    });
+  };
+  document.head.appendChild(script);
+}
+
+function initMonaco() {
+  // Register TrioDB SQL language
+  monaco.languages.register({ id: 'triodb-sql' });
+
+  monaco.languages.setMonarchTokensProvider('triodb-sql', {
+    ignoreCase: true,
+    keywords: [
+      'SELECT','FROM','WHERE','ORDER','BY','ASC','DESC','LIMIT','OFFSET',
+      'INSERT','INTO','VALUES','UPDATE','SET','DELETE','CREATE','DROP',
+      'TABLE','INDEX','IF','EXISTS','NOT','EDGE','MATCH','WITH','JOIN',
+      'INNER','LEFT','RIGHT','ON','AND','OR','IN','BETWEEN','LIKE','IS',
+      'NULL','AS','TRUE','FALSE','INT','BIGINT','FLOAT','DOUBLE','BOOL',
+      'TEXT','BLOB','DATETIME','VECTOR','PRIMARY','KEY','UNIQUE','DEFAULT',
+      'BTREE','GRAPH','TO','GROUP','USING','BACKUP','VACUUM','HAVING',
+      'DISTINCT','CASE','WHEN','THEN','ELSE','END','CONFLICT','DO',
+      'NOTHING','ALTER','ADD','COLUMN','CAST','OPTIONAL','REINDEX',
+      'EXPLAIN','PRAGMA','OVER','PARTITION','ROWS','UNBOUNDED','PRECEDING',
+      'FOLLOWING','CURRENT','ROW','RECURSIVE','UNION','ALL','RENAME',
+      'TYPE','DATABASE','DATABASES','USE','SHOW','LISTEN','UNLISTEN',
+      'MATERIALIZED','REFRESH','VIEW','BEGIN','COMMIT','ROLLBACK',
+      'TRANSACTION','CROSS'
+    ],
+    builtinFunctions: [
+      'COUNT','SUM','AVG','MIN','MAX','LENGTH','UPPER','LOWER','TRIM',
+      'LTRIM','RTRIM','SUBSTR','SUBSTRING','REPLACE','CONCAT','INSTR',
+      'REVERSE','ABS','ROUND','CEIL','CEILING','FLOOR','SQRT','POWER',
+      'POW','MOD','SIGN','LOG','LOG10','EXP','PI','RANDOM','NOW','DATE',
+      'TIME','YEAR','MONTH','DAY','HOUR','MINUTE','SECOND','TYPEOF',
+      'COALESCE','NULLIF','IIF','IFNULL','VECTOR_DISTANCE','VECTOR_DIMS',
+      'VECTOR_NORM','TEXT_MATCH','TEXT_SCORE','DEGREE','IN_DEGREE',
+      'OUT_DEGREE','PAGERANK','COMMUNITIES','SHORTEST_PATH','ROW_NUMBER',
+      'RANK','DENSE_RANK','NTILE','LAG','LEAD','FIRST_VALUE','LAST_VALUE'
+    ],
+    tokenizer: {
+      root: [
+        [/--.*$/, 'comment'],
+        [/'([^']|'')*'/, 'string'],
+        [/@\w+/, 'variable'],
+        [/\d+(\.\d+)?/, 'number'],
+        [/[a-zA-Z_]\w*/, {
+          cases: {
+            '@keywords': 'keyword',
+            '@builtinFunctions': 'predefined',
+            '@default': 'identifier'
+          }
+        }],
+        [/[<>=!]+|->|<-|\.\./, 'operator'],
+        [/[;,().]/, 'delimiter'],
+        [/:\w+/, 'type.identifier'],
+      ]
+    }
+  });
+
+  // Define TrioDB dark theme
+  monaco.editor.defineTheme('triodb-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'keyword', foreground: 'c792ea' },
+      { token: 'predefined', foreground: '82aaff' },
+      { token: 'string', foreground: 'c3e88d' },
+      { token: 'number', foreground: 'f78c6c' },
+      { token: 'comment', foreground: '546e7a', fontStyle: 'italic' },
+      { token: 'variable', foreground: 'ffcb6b' },
+      { token: 'operator', foreground: '89ddff' },
+      { token: 'type.identifier', foreground: '4dd0e1' },
+      { token: 'identifier', foreground: 'e8edf5' },
+      { token: 'delimiter', foreground: '8899b4' },
+    ],
+    colors: {
+      'editor.background': '#0c1222',
+      'editor.foreground': '#e8edf5',
+      'editorCursor.foreground': '#4dd0e1',
+      'editor.lineHighlightBackground': '#111827',
+      'editor.selectionBackground': '#1e3a5f',
+      'editorLineNumber.foreground': '#556680',
+      'editorLineNumber.activeForeground': '#8899b4',
+      'editorIndentGuide.background': '#1a2235',
+    }
+  });
+
+  monacoEditor = monaco.editor.create($('editorHost'), {
+    value: `-- Welcome to TrioDB Playground\n-- Type SQL queries and press Ctrl+Enter to run\n\nSELECT e.name, e.department, e.salary,\n       ROW_NUMBER() OVER (ORDER BY e.salary DESC) AS rank\nFROM employees e\nWHERE e.is_active = TRUE\nORDER BY e.salary DESC;`,
+    language: 'triodb-sql',
+    theme: 'triodb-dark',
+    fontSize: 14,
+    fontFamily: "'JetBrains Mono', 'Consolas', monospace",
+    minimap: { enabled: false },
+    lineNumbers: 'on',
+    scrollBeyondLastLine: false,
+    automaticLayout: true,
+    padding: { top: 12 },
+    renderLineHighlight: 'line',
+    tabSize: 4,
+  });
+
+  // Ctrl+Enter to run
+  monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+    runEditorSQL();
+  });
+
+  // ── Language Service Providers ─────────────────────────────
+  // Completion provider
+  monaco.languages.registerCompletionItemProvider('triodb-sql', {
+    triggerCharacters: ['.', ' ', ':'],
+    provideCompletionItems: function(model, position) {
+      if (!db || typeof db.api.GetCompletions !== 'function') return { suggestions: [] };
+      try {
+        const sql = model.getValue();
+        const json = db.api.GetCompletions(sql, position.lineNumber, position.column);
+        const items = JSON.parse(json);
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn
+        };
+        return {
+          suggestions: items.map(function(item) {
+            return {
+              label: item.label,
+              kind: item.kind,
+              detail: item.detail,
+              insertText: item.insertText,
+              range: range,
+              sortText: String(item.sortOrder).padStart(3, '0') + item.label
+            };
+          })
+        };
+      } catch (e) { return { suggestions: [] }; }
+    }
+  });
+
+  // Hover provider
+  monaco.languages.registerHoverProvider('triodb-sql', {
+    provideHover: function(model, position) {
+      if (!db || typeof db.api.GetHover !== 'function') return null;
+      try {
+        const sql = model.getValue();
+        const offset = model.getOffsetAt(position);
+        const json = db.api.GetHover(sql, offset);
+        if (!json) return null;
+        const info = JSON.parse(json);
+        const word = model.getWordAtPosition(position);
+        if (!word) return null;
+        return {
+          range: new monaco.Range(
+            position.lineNumber, word.startColumn,
+            position.lineNumber, word.endColumn),
+          contents: [{ value: info.content }]
+        };
+      } catch (e) { return null; }
+    }
+  });
+
+  // Signature help provider
+  monaco.languages.registerSignatureHelpProvider('triodb-sql', {
+    signatureHelpTriggerCharacters: ['(', ','],
+    provideSignatureHelp: function(model, position) {
+      if (!db || typeof db.api.GetSignatureHelp !== 'function') return null;
+      try {
+        const sql = model.getValue();
+        const offset = model.getOffsetAt(position);
+        const json = db.api.GetSignatureHelp(sql, offset);
+        if (!json) return null;
+        const help = JSON.parse(json);
+        return {
+          value: {
+            signatures: [{
+              label: help.signature,
+              parameters: help.parameters.map(function(p) {
+                return { label: p.name + ' ' + p.type };
+              })
+            }],
+            activeSignature: 0,
+            activeParameter: help.activeParameter
+          },
+          dispose: function() {}
+        };
+      } catch (e) { return null; }
+    }
+  });
+
+  // Diagnostics (parse errors) with debounce
+  let diagTimer = null;
+  monacoEditor.onDidChangeModelContent(function() {
+    if (diagTimer) clearTimeout(diagTimer);
+    diagTimer = setTimeout(function() {
+      if (!db || !monacoEditor || typeof db.api.GetDiagnostics !== 'function') return;
+      try {
+        const sql = monacoEditor.getValue();
+        const json = db.api.GetDiagnostics(sql);
+        const diags = JSON.parse(json);
+        const model = monacoEditor.getModel();
+        const markers = diags.map(function(d) {
+          return {
+            severity: d.severity,
+            message: d.message,
+            startLineNumber: d.line,
+            startColumn: d.column,
+            endLineNumber: d.line,
+            endColumn: d.column + Math.max(1, d.endOffset - d.startOffset)
+          };
+        });
+        monaco.editor.setModelMarkers(model, 'triodb', markers);
+      } catch (e) { /* ignore */ }
+    }, 500);
+  });
+
+  $('editorRunBtn').disabled = !db;
+  $('benchBtn').disabled = !db;
+}
+
+window.runEditorSQL = function() {
+  if (!monacoEditor || !db) return;
+  const sql = monacoEditor.getValue().trim();
+  if (!sql) return;
+  const panel = $('resultsPanel');
+  panel.innerHTML = '';
+  executeSqlToPanel(sql, panel, {});
+};
+
+// ── WASM Benchmark ───────────────────────────────────────────
+window.runBenchmark = async function() {
+  if (!db) return;
+  const panel = $('resultsPanel');
+  panel.innerHTML = '';
+  const benchBtn = $('benchBtn');
+  const runBtn = $('editorRunBtn');
+  benchBtn.disabled = true;
+  if (runBtn) runBtn.disabled = true;
+
+  const txBatchSize = parseInt($('batchInput').value) || 50000;
+  const rowsPerInsert = 5000; // Multi-row INSERT VALUES chunk size
+  const milestones = [500_000, 1_000_000];
+
+  function addHeader(text) {
+    const el = document.createElement('div');
+    el.className = 'bench-header';
+    el.textContent = text;
+    panel.appendChild(el);
+  }
+  function addPhase(text) {
+    const el = document.createElement('div');
+    el.className = 'bench-phase';
+    el.textContent = text;
+    panel.appendChild(el);
+  }
+  function addRow(label, value, unit, rateThresholds) {
+    const el = document.createElement('div');
+    el.className = 'bench-row';
+    let cls = '';
+    if (rateThresholds) {
+      const numVal = parseFloat(String(value).replace(/,/g, ''));
+      if (numVal >= rateThresholds[0]) cls = 'fast';
+      else if (numVal >= rateThresholds[1]) cls = 'medium';
+      else cls = 'slow';
+    }
+    el.innerHTML = `<span class="bench-label-col">${label}</span><span class="bench-value ${cls}">${value} ${unit}</span>`;
+    panel.appendChild(el);
+    panel.scrollTop = panel.scrollHeight;
+  }
+  function addProgress(text) {
+    let el = panel.querySelector('.bench-progress-live');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'bench-progress bench-progress-live';
+      panel.appendChild(el);
+    }
+    el.textContent = text;
+    panel.scrollTop = panel.scrollHeight;
+  }
+  function clearProgress() {
+    const el = panel.querySelector('.bench-progress-live');
+    if (el) el.remove();
+  }
+  function addSep() {
+    const el = document.createElement('hr');
+    el.className = 'bench-separator';
+    panel.appendChild(el);
+  }
+  function fmt(n) { return n.toLocaleString(); }
+
+  try {
+    addHeader(`TrioDB WASM Benchmark — ${rowsPerInsert} rows/INSERT, ${fmt(txBatchSize)} rows/tx`);
+    addRow('Milestones', milestones.map(m => fmt(m)).join(' → '), 'rows');
+
+    // ── Warm-up: pre-build SQL templates & prime engine ──
+    addProgress('Warming up engine...');
+    await yieldUI();
+    db.api.RunSql(db.handle, "DROP TABLE IF EXISTS bench");
+    db.api.RunSql(db.handle, "CREATE TABLE bench (id INT PRIMARY KEY, val INT, label TEXT)");
+
+    // Warm-up: small insert + query to prime parser/planner caches
+    db.api.RunSql(db.handle, "BEGIN");
+    db.api.RunSql(db.handle, "INSERT INTO bench VALUES (0,0,'warm')");
+    db.api.RunSql(db.handle, "COMMIT");
+    let warmRs = db.api.Query(db.handle, "SELECT * FROM bench WHERE id = 0");
+    while (db.api.ResultRead(warmRs)) { db.api.ResultGetText(warmRs, 0); }
+    db.api.ResultClose(warmRs);
+    warmRs = db.api.Query(db.handle, "SELECT COUNT(*) FROM bench");
+    if (db.api.ResultRead(warmRs)) db.api.ResultGetText(warmRs, 0);
+    db.api.ResultClose(warmRs);
+    warmRs = db.api.Query(db.handle, "SELECT SUM(val), AVG(val) FROM bench");
+    if (db.api.ResultRead(warmRs)) db.api.ResultGetText(warmRs, 0);
+    db.api.ResultClose(warmRs);
+    // Reset table
+    db.api.RunSql(db.handle, "DROP TABLE bench");
+    db.api.RunSql(db.handle, "CREATE TABLE bench (id INT PRIMARY KEY, val INT, label TEXT)");
+
+    // Pre-build all INSERT SQL strings (avoid string alloc in hot path)
+    addProgress('Pre-building SQL batches...');
+    await yieldUI();
+    const totalTarget = milestones[milestones.length - 1];
+    const prebuiltInserts = [];
+    for (let offset = 0; offset < totalTarget; offset += rowsPerInsert) {
+      const chunk = Math.min(rowsPerInsert, totalTarget - offset);
+      const parts = new Array(chunk);
+      for (let i = 0; i < chunk; i++) {
+        const id = offset + i;
+        parts[i] = `(${id},${id * 7},'i${id}')`;
+      }
+      prebuiltInserts.push('INSERT INTO bench VALUES ' + parts.join(','));
+    }
+
+    // Pre-build read queries
+    const lookups = 100;
+    const lookupQueries = new Array(lookups);
+    for (let i = 0; i < lookups; i++) {
+      lookupQueries[i] = `SELECT * FROM bench WHERE id = ${Math.floor(Math.random() * totalTarget)}`;
+    }
+
+    // Prepare read queries if Prepare API is available (skips parsing on each execution)
+    const hasPrepare = typeof db.api.Prepare === 'function';
+    let psLookup = 0, psRange = 0, psCount = 0, psSum = 0;
+    if (hasPrepare) {
+      addProgress('Compiling prepared statements...');
+      await yieldUI();
+      psLookup = db.api.Prepare(db.handle, "SELECT * FROM bench WHERE id = @id");
+      psRange = db.api.Prepare(db.handle, "SELECT * FROM bench WHERE id >= @lo AND id < @hi");
+      psCount = db.api.Prepare(db.handle, "SELECT COUNT(*) FROM bench");
+      psSum = db.api.Prepare(db.handle, "SELECT SUM(val), AVG(val) FROM bench");
+    }
+
+    clearProgress();
+    addRow('Warm-up', 'done', '');
+    if (hasPrepare) addRow('Prepared statements', '4 compiled', '');
+
+    let totalInserted = 0;
+    let insertIdx = 0; // index into prebuiltInserts
+
+    for (const milestone of milestones) {
+      const rowsNeeded = milestone - totalInserted;
+      if (rowsNeeded <= 0) continue;
+
+      addSep();
+      addPhase(`Insert to ${fmt(milestone)} rows`);
+
+      const t0 = performance.now();
+      let phaseInserted = 0;
+
+      while (phaseInserted < rowsNeeded) {
+        const txRows = Math.min(txBatchSize, rowsNeeded - phaseInserted);
+        db.api.RunSql(db.handle, "BEGIN");
+
+        let txDone = 0;
+        while (txDone < txRows) {
+          const chunk = Math.min(rowsPerInsert, txRows - txDone);
+          db.api.RunSql(db.handle, prebuiltInserts[insertIdx++]);
+          txDone += chunk;
+        }
+
+        db.api.RunSql(db.handle, "COMMIT");
+        phaseInserted += txRows;
+
+        if (phaseInserted % 100_000 < txBatchSize || phaseInserted >= rowsNeeded) {
+          const elapsed = (performance.now() - t0) / 1000;
+          const rate = Math.round(phaseInserted / elapsed);
+          addProgress(`Inserting... ${fmt(totalInserted + phaseInserted)} / ${fmt(milestone)} — ${fmt(rate)} rows/sec`);
+          await yieldUI();
+        }
+      }
+
+      totalInserted += phaseInserted;
+      const insertMs = performance.now() - t0;
+      clearProgress();
+
+      const insertRate = Math.round(rowsNeeded / (insertMs / 1000));
+      addRow(`Insert ${fmt(rowsNeeded)} rows`, fmt(insertRate), 'rows/sec', [100000, 30000]);
+      addRow('Insert time', (insertMs / 1000).toFixed(2), 'sec');
+      addRow('Total rows', fmt(totalInserted), '');
+
+      // ── READ benchmarks ──
+      addPhase(`Read benchmarks at ${fmt(milestone)} rows`);
+      await yieldUI();
+
+      // Point lookups (prepared if available)
+      addProgress('Running point lookups ...');
+      await yieldUI();
+      let t1 = performance.now();
+      if (hasPrepare && psLookup > 0) {
+        const ph = db.api.CreateParams();
+        for (let i = 0; i < lookups; i++) {
+          db.api.ParamSetInt(ph, 'id', Math.floor(Math.random() * totalInserted));
+          const rs = db.api.PreparedQuery(psLookup, ph);
+          while (db.api.ResultRead(rs)) { db.api.ResultGetText(rs, 0); }
+          db.api.ResultClose(rs);
+        }
+        db.api.ParamsClose(ph);
+      } else {
+        for (let i = 0; i < lookups; i++) {
+          const rs = db.api.Query(db.handle, lookupQueries[i]);
+          while (db.api.ResultRead(rs)) { db.api.ResultGetText(rs, 0); }
+          db.api.ResultClose(rs);
+        }
+      }
+      let ms = performance.now() - t1;
+      clearProgress();
+      const lookupLabel = hasPrepare ? 'Point lookup prepared' : 'Point lookup';
+      addRow(`${lookupLabel} (×${lookups})`, fmt(Math.round(lookups / (ms / 1000))), 'q/sec', [5000, 1000]);
+      addRow('Avg lookup', (ms / lookups).toFixed(2), 'ms');
+
+      // Range scan (10K rows, prepared if available)
+      addProgress('Running range scan ...');
+      await yieldUI();
+      const rangeStart = Math.floor(totalInserted / 4);
+      t1 = performance.now();
+      let scanned = 0;
+      let rs;
+      if (hasPrepare && psRange > 0) {
+        const ph = db.api.CreateParams();
+        db.api.ParamSetInt(ph, 'lo', rangeStart);
+        db.api.ParamSetInt(ph, 'hi', rangeStart + 10000);
+        rs = db.api.PreparedQuery(psRange, ph);
+        while (db.api.ResultRead(rs)) { db.api.ResultGetText(rs, 0); scanned++; }
+        db.api.ResultClose(rs);
+        db.api.ParamsClose(ph);
+      } else {
+        rs = db.api.Query(db.handle, `SELECT * FROM bench WHERE id >= ${rangeStart} AND id < ${rangeStart + 10000}`);
+        while (db.api.ResultRead(rs)) { db.api.ResultGetText(rs, 0); scanned++; }
+        db.api.ResultClose(rs);
+      }
+      ms = performance.now() - t1;
+      clearProgress();
+      addRow(`Range scan (${fmt(scanned)} rows)`, fmt(Math.round(scanned / (ms / 1000))), 'rows/sec', [500000, 100000]);
+
+      // COUNT(*) (prepared if available)
+      t1 = performance.now();
+      if (hasPrepare && psCount > 0) {
+        rs = db.api.PreparedQuery(psCount, 0);
+      } else {
+        rs = db.api.Query(db.handle, "SELECT COUNT(*) FROM bench");
+      }
+      let cnt = '';
+      if (db.api.ResultRead(rs)) cnt = db.api.ResultGetText(rs, 0);
+      db.api.ResultClose(rs);
+      ms = performance.now() - t1;
+      addRow(`COUNT(*) = ${cnt}`, ms.toFixed(1), 'ms');
+
+      // SUM/AVG (prepared if available)
+      t1 = performance.now();
+      if (hasPrepare && psSum > 0) {
+        rs = db.api.PreparedQuery(psSum, 0);
+      } else {
+        rs = db.api.Query(db.handle, "SELECT SUM(val), AVG(val) FROM bench");
+      }
+      if (db.api.ResultRead(rs)) { db.api.ResultGetText(rs, 0); }
+      db.api.ResultClose(rs);
+      ms = performance.now() - t1;
+      addRow('SUM/AVG', ms.toFixed(1), 'ms');
+
+      await yieldUI();
+    }
+
+    addSep();
+    addProgress('Cleaning up...');
+    await yieldUI();
+    if (hasPrepare) {
+      if (psLookup > 0) db.api.PreparedClose(psLookup);
+      if (psRange > 0) db.api.PreparedClose(psRange);
+      if (psCount > 0) db.api.PreparedClose(psCount);
+      if (psSum > 0) db.api.PreparedClose(psSum);
+    }
+    db.api.RunSql(db.handle, "DROP TABLE bench");
+    clearProgress();
+    addPhase('Benchmark complete');
+
+  } catch (e) {
+    clearProgress();
+    const errEl = document.createElement('div');
+    errEl.className = 'result-error';
+    errEl.textContent = `Benchmark error: ${e.message}\n${e.stack || ''}`;
+    panel.appendChild(errEl);
+  } finally {
+    benchBtn.disabled = false;
+    if (runBtn) runBtn.disabled = false;
+  }
+};
+
+// ── Monaco Left Drawer: DB Explorer ─────────────────────────
+function buildDbExplorer() {
+  const el = $('dbExplorer');
+  el.innerHTML = '';
+  for (const t of TABLE_SCHEMA) {
+    const tbl = document.createElement('div');
+    tbl.className = 'tree-table';
+    tbl.innerHTML = `<span class="icon">&#9707;</span>${t.name}<span class="col-type" style="margin-left:auto;margin-right:0.3rem">${t.cols.length} cols</span><span class="arrow">&#9654;</span>`;
+    const colsDiv = document.createElement('div');
+    colsDiv.className = 'tree-cols';
+    colsDiv.style.display = 'none';
+    for (const col of t.cols) {
+      const c = document.createElement('div');
+      c.className = 'tree-col';
+      const isPK = col.c.includes('PK');
+      const type = col.c.replace(' PK', '');
+      let badges = '';
+      if (isPK) badges += '<span class="col-badge pk">PK</span>';
+      c.innerHTML = `<span class="col-name">${col.n}</span><span class="col-type">${type}</span>${badges}`;
+      colsDiv.appendChild(c);
+    }
+    tbl.addEventListener('click', () => {
+      const open = tbl.classList.toggle('open');
+      colsDiv.style.display = open ? 'block' : 'none';
+    });
+    el.appendChild(tbl);
+    el.appendChild(colsDiv);
+  }
+}
+
+// ── Monaco Left Drawer: Function Reference ──────────────────
+function parseFnSig(name, sig) {
+  // Parse "(param TYPE, ...) → RET" into colored HTML
+  const arrowIdx = sig.indexOf('→');
+  const retType = arrowIdx >= 0 ? sig.substring(arrowIdx + 1).trim() : '';
+  const paramsPart = arrowIdx >= 0 ? sig.substring(0, arrowIdx).trim() : sig;
+  // Extract inside parens
+  const inner = paramsPart.replace(/^\(/, '').replace(/\)$/, '');
+  let paramsHtml = '';
+  if (inner.length > 0) {
+    const parts = inner.split(',').map(p => p.trim());
+    paramsHtml = parts.map(p => {
+      // "str TEXT" or "expr AS type" or "..."
+      const sp = p.indexOf(' ');
+      if (sp < 0) return `<span class="fn-param">${p}</span>`;
+      const pName = p.substring(0, sp);
+      const pType = p.substring(sp + 1);
+      return `<span class="fn-param">${pName}</span> <span class="fn-param-type">${pType}</span>`;
+    }).join('<span class="fn-paren">, </span>');
+  }
+  return { paramsHtml, retType };
+}
+
+function renderFnItem(fn) {
+  const { paramsHtml, retType } = parseFnSig(fn.name, fn.sig);
+  return `<span class="fn-name">${fn.name}</span><span class="fn-paren">(</span>${paramsHtml}<span class="fn-paren">)</span>${retType ? `<span class="fn-ret"> → ${retType}</span>` : ''}`;
+}
+
+let activeFnPopup = null;
+function buildPopupSig(name, sig) {
+  const arrowIdx = sig.indexOf('→');
+  const retType = arrowIdx >= 0 ? sig.substring(arrowIdx + 1).trim() : '';
+  const paramsPart = arrowIdx >= 0 ? sig.substring(0, arrowIdx).trim() : sig;
+  const inner = paramsPart.replace(/^\(/, '').replace(/\)$/, '');
+  let paramsHtml = '';
+  if (inner.length > 0) {
+    const parts = inner.split(',').map(p => p.trim());
+    paramsHtml = parts.map(p => {
+      const sp = p.indexOf(' ');
+      if (sp < 0) return `<span class="fn-pname">${p}</span>`;
+      return `<span class="fn-pname">${p.substring(0, sp)}</span> <span class="fn-ptype">${p.substring(sp + 1)}</span>`;
+    }).join('<span class="fn-punct">, </span>');
+  }
+  return `<span class="fn-kw">${name}</span><span class="fn-punct">(</span>${paramsHtml}<span class="fn-punct">)</span>${retType ? ` <span class="fn-ret-arrow">→</span> <span class="fn-ret-type">${retType}</span>` : ''}`;
+}
+
+function showFnPopup(fn) {
+  closeFnPopup();
+  const sigHtml = buildPopupSig(fn.name, fn.sig);
+  const popup = document.createElement('div');
+  popup.className = 'fn-popup';
+  popup.innerHTML = `<div class="fn-popup-sig">${sigHtml}</div>` +
+    `<div class="fn-popup-desc">${fn.desc}</div>` +
+    (fn.ex ? `<div class="fn-popup-label">Example</div><div class="fn-popup-example sql-body">${highlightSQL(fn.ex)}</div>` : '');
+  // Append to editor middle column so it's positioned relative to it
+  const middle = $('editorMiddle');
+  middle.style.position = 'relative';
+  middle.appendChild(popup);
+  activeFnPopup = popup;
+  // Close on click outside
+  setTimeout(() => {
+    document.addEventListener('click', closeFnPopupOnClick);
+  }, 10);
+}
+function closeFnPopup() {
+  if (activeFnPopup) { activeFnPopup.remove(); activeFnPopup = null; }
+  document.removeEventListener('click', closeFnPopupOnClick);
+}
+function closeFnPopupOnClick(e) {
+  if (activeFnPopup && !activeFnPopup.contains(e.target)) closeFnPopup();
+}
+
+function buildFnReference() {
+  const el = $('fnReference');
+  el.innerHTML = '';
+  const groups = {};
+  for (const fn of FUNCTIONS) {
+    if (!groups[fn.cat]) groups[fn.cat] = [];
+    groups[fn.cat].push(fn);
+  }
+  let firstFnGroup = true;
+  for (const [cat, fns] of Object.entries(groups)) {
+    const title = document.createElement('div');
+    title.className = 'fn-group-title' + (firstFnGroup ? ' open' : '');
+    title.innerHTML = `<span class="fn-arrow">&#9654;</span>${cat}<span class="fn-count">${fns.length}</span>`;
+    title.addEventListener('click', () => {
+      const opening = !title.classList.contains('open');
+      el.querySelectorAll('.fn-group-title.open').forEach(h => {
+        if (h !== title) h.classList.remove('open');
+      });
+      title.classList.toggle('open', opening);
+    });
+    el.appendChild(title);
+    firstFnGroup = false;
+
+    const itemsDiv = document.createElement('div');
+    itemsDiv.className = 'fn-group-items';
+    for (const fn of fns) {
+      const item = document.createElement('div');
+      item.className = 'fn-item';
+      item.innerHTML = renderFnItem(fn);
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showFnPopup(fn);
+      });
+      item.addEventListener('dblclick', () => {
+        closeFnPopup();
+        if (monacoEditor) {
+          const pos = monacoEditor.getPosition();
+          monacoEditor.executeEdits('', [{
+            range: new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column),
+            text: fn.name + fn.sig.replace(/\s*→.*$/, ''),
+          }]);
+          monacoEditor.focus();
+        }
+      });
+      itemsDiv.appendChild(item);
+    }
+    el.appendChild(itemsDiv);
+  }
+}
+
+// ── File Save / Load ─────────────────────────────────────────
+window.saveToFile = async function() {
+  if (!db) return;
+  const name = db.api.GetCurrentDatabase();
+  try {
+    const base64 = db.api.ExportDatabaseByName(name);
+    if (!base64) { alert('Export failed: ' + db.api.GetLastError()); return; }
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: 'application/octet-stream' });
+    if (window.showSaveFilePicker) {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: `${name}.triodb`,
+        types: [{ description: 'TrioDB Database', accept: { 'application/octet-stream': ['.triodb'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${name}.triodb`; a.click();
+      URL.revokeObjectURL(url);
+    }
+    $('statusBar').textContent = `Saved ${name}.triodb`;
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('Save error: ' + e.message);
+  }
+};
+
+window.loadFromFile = async function() {
+  if (!db) return;
+  try {
+    let file;
+    if (window.showOpenFilePicker) {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: 'TrioDB Database', accept: { 'application/octet-stream': ['.triodb'] } }]
+      });
+      file = await handle.getFile();
+    } else {
+      file = await new Promise((res, rej) => {
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = '.triodb';
+        inp.onchange = () => inp.files.length ? res(inp.files[0]) : rej(new Error('No file'));
+        inp.click();
+      });
+    }
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    const base64 = btoa(binary);
+    const name = file.name.replace(/\.triodb$/i, '');
+    const handle = db.api.ImportDatabaseAs(name, base64);
+    if (handle > 0) {
+      db.handle = handle;
+      $('statusBar').textContent = `Loaded ${name}`;
+      $('statusBar').className = 'ready';
+    } else {
+      alert('Import failed: ' + db.api.GetLastError());
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('Load error: ' + e.message);
+  }
+};
+
+// ── Data Visualizer ──────────────────────────────────────────
+window.switchVizTab = function(tab) {
+  // Sub-tab buttons
+  document.querySelectorAll('.viz-subtab').forEach(b => b.classList.toggle('active', b.dataset.viz === tab));
+  // Middle panels
+  document.querySelectorAll('.viz-panel').forEach(p => p.classList.remove('active'));
+  const panel = $('viz' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Panel');
+  if (panel) panel.classList.add('active');
+  // Left drawer slots
+  document.querySelectorAll('.viz-left-slot').forEach(s => s.classList.toggle('active', s.dataset.vizslot === tab));
+  // Right panel slots
+  document.querySelectorAll('.viz-right-slot').forEach(s => s.classList.toggle('active', s.dataset.vizslot === tab));
+  // Reset drawer sizes per sub-tab
+  const leftW = getComputedStyle(document.documentElement).getPropertyValue('--left-width').trim();
+  document.querySelectorAll('.left-drawer').forEach(d => d.style.width = leftW);
+  document.querySelectorAll('.right-panel').forEach(d => d.style.width = leftW);
+  // Canvas resize + re-layout
+  if (tab === 'graph') requestAnimationFrame(() => { resizeVizCanvas('vizGraphCanvas'); runGraphLayout(true); });
+  if (tab === 'vectors') requestAnimationFrame(() => resizeVizCanvas('vizVecCanvas'));
+};
+
+function resizeVizCanvas(id) {
+  const canvas = $(id);
+  if (!canvas) return;
+  const parent = canvas.parentElement;
+  const w = parent.clientWidth, h = parent.clientHeight;
+  if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) {
+    canvas.width = w; canvas.height = h;
+    if (id === 'vizGraphCanvas') renderGraph();
+    if (id === 'vizVecCanvas') { if (vecNeedsAutoFit) { vecNeedsAutoFit = false; autoFitVecCloud(); } else drawVecCloud(); }
+  }
+}
+
+// ── Graph data ──
+let graphNodes = {};
+let graphEdges = [];
+let edgeTypeActive = {};
+let graphSim = null;
+let graphZoom = 1, graphPanX = 0, graphPanY = 0;
+let graphDragNode = null;
+let graphLayout = 'grid';  // 'force' | 'radial' | 'hierarchical' | 'grid'
+let graphFocusNode = null;  // node key for radial-focus mode
+
+const EDGE_DEFS = [
+  { label: 'MANAGES', from: 'departments', to: 'employees', color: '#2196F3' },
+  { label: 'REPORTS_TO', from: 'employees', to: 'employees', color: '#4dd0e1' },
+  { label: 'KNOWS', from: 'employees', to: 'employees', color: '#ab47bc' },
+  { label: 'MENTORS', from: 'employees', to: 'employees', color: '#4ade80' },
+  { label: 'HAS_SKILL', from: 'employees', to: 'skills', color: '#fbbf24' },
+  { label: 'WORKS_ON', from: 'employees', to: 'projects', color: '#f87171' },
+  { label: 'REQUIRES', from: 'skills', to: 'skills', color: '#ff9800' },
+  { label: 'PARENT_OF', from: 'skills', to: 'skills', color: '#ec407a' },
+  { label: 'RELATED_TO', from: 'skills', to: 'skills', color: '#26a69a' },
+];
+const NODE_COLORS = { employees: '#2196F3', departments: '#4dd0e1', projects: '#4ade80', skills: '#fbbf24' };
+
+// ── Vector data ──
+let vecSeries = [];
+let vecRotX = 0.4, vecRotY = 0.3;
+let vecZoom = 1, vecPanX = 0, vecPanY = 0;
+let vecNeedsAutoFit = true;
+let vecAutoRotate = true;
+let vecAutoRotateAnim = null;
+
+// ── Controls toolbar builder ──
+function buildCanvasControls(parentId, onZoomIn, onZoomOut, onRecenter) {
+  const bar = document.createElement('div');
+  bar.className = 'viz-controls';
+  const makeBtn = (label, title, fn) => {
+    const b = document.createElement('button');
+    b.className = 'viz-ctrl-btn'; b.title = title; b.textContent = label;
+    b.addEventListener('click', fn); return b;
+  };
+  bar.appendChild(makeBtn('+', 'Zoom in', onZoomIn));
+  bar.appendChild(makeBtn('\u2212', 'Zoom out', onZoomOut));
+  bar.appendChild(makeBtn('\u25CE', 'Recenter', onRecenter));
+  $(parentId).appendChild(bar);
+}
+
+function initViz() {
+  buildVizTableList();
+  loadGraphData();
+  buildEdgeCards();
+  buildGraphConfig();
+  loadVectorData();
+  buildVecLegend();
+  buildVecConfig();
+
+  // Canvas resize observers
+  const gObs = new ResizeObserver(() => resizeVizCanvas('vizGraphCanvas'));
+  const gParent = $('vizGraphCanvas').parentElement;
+  if (gParent) gObs.observe(gParent);
+  const vObs = new ResizeObserver(() => resizeVizCanvas('vizVecCanvas'));
+  const vParent = $('vizVecCanvas').parentElement;
+  if (vParent) vObs.observe(vParent);
+
+  // ── Graph canvas interactions ──
+  const gc = $('vizGraphCanvas');
+  let graphPanning = false, graphPanLastX = 0, graphPanLastY = 0;
+
+  let graphClickCandidate = null;
+  gc.addEventListener('mousedown', e => {
+    const rect = gc.getBoundingClientRect();
+    const mx = (e.clientX - rect.left - graphPanX) / graphZoom;
+    const my = (e.clientY - rect.top - graphPanY) / graphZoom;
+    const nodes = Object.values(graphNodes);
+    let hit = null;
+    for (const n of nodes) {
+      if (!n.x) continue;
+      const dx = mx - n.x, dy = my - n.y;
+      if (dx * dx + dy * dy < (14 / graphZoom) * (14 / graphZoom)) { hit = n; break; }
+    }
+    if (hit) {
+      graphDragNode = hit; graphDragNode.pinned = true; gc.style.cursor = 'grabbing';
+      graphClickCandidate = { node: hit, sx: e.clientX, sy: e.clientY };
+    } else {
+      graphPanning = true; graphPanLastX = e.clientX; graphPanLastY = e.clientY; gc.style.cursor = 'grabbing';
+      graphClickCandidate = null;
+    }
+  });
+  window.addEventListener('mousemove', e => {
+    if (graphDragNode) {
+      const rect = gc.getBoundingClientRect();
+      graphDragNode.x = (e.clientX - rect.left - graphPanX) / graphZoom;
+      graphDragNode.y = (e.clientY - rect.top - graphPanY) / graphZoom;
+      graphDragNode.vx = 0; graphDragNode.vy = 0; renderGraph(); return;
+    }
+    if (!graphPanning) {
+      const rect = gc.getBoundingClientRect();
+      const mx = (e.clientX - rect.left - graphPanX) / graphZoom;
+      const my = (e.clientY - rect.top - graphPanY) / graphZoom;
+      const nodes = Object.values(graphNodes);
+      let hit = null;
+      for (const n of nodes) {
+        if (!n.x) continue;
+        const dx = mx - n.x, dy = my - n.y;
+        if (dx * dx + dy * dy < (14 / graphZoom) * (14 / graphZoom)) { hit = n; break; }
+      }
+      gc.style.cursor = hit ? 'grab' : 'default';
+      gc.title = hit ? `${hit.table}: ${hit.name}` : '';
+      return;
+    }
+    graphPanX += e.clientX - graphPanLastX; graphPanY += e.clientY - graphPanLastY;
+    graphPanLastX = e.clientX; graphPanLastY = e.clientY; renderGraph();
+  });
+  window.addEventListener('mouseup', e => {
+    if (graphDragNode) {
+      // Detect click vs drag: if mouse barely moved, treat as click → focus node
+      if (graphClickCandidate) {
+        const dx = e.clientX - graphClickCandidate.sx, dy = e.clientY - graphClickCandidate.sy;
+        if (dx * dx + dy * dy < 25) {
+          setGraphFocus(graphClickCandidate.node.id);
+        }
+        graphClickCandidate = null;
+      }
+      graphDragNode.pinned = false; graphDragNode = null;
+    }
+    graphPanning = false; gc.style.cursor = '';
+  });
+  gc.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = gc.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const oldZoom = graphZoom;
+    graphZoom *= e.deltaY < 0 ? 1.12 : 0.89;
+    graphZoom = Math.max(0.15, Math.min(8, graphZoom));
+    graphPanX = mx - (mx - graphPanX) * (graphZoom / oldZoom);
+    graphPanY = my - (my - graphPanY) * (graphZoom / oldZoom);
+    renderGraph();
+  }, { passive: false });
+  buildCanvasControls('vizGraphPanel',
+    () => { graphZoom = Math.min(8, graphZoom * 1.3); renderGraph(); },
+    () => { graphZoom = Math.max(0.15, graphZoom / 1.3); renderGraph(); },
+    () => { graphZoom = 1; graphPanX = 0; graphPanY = 0; renderGraph(); }
+  );
+
+  // ── Vector canvas interactions ──
+  const vc = $('vizVecCanvas');
+  let vecDrag = false, vecLastX = 0, vecLastY = 0;
+  let vecPanning = false, vecPanLastX = 0, vecPanLastY = 0;
+  vc.addEventListener('mousedown', e => {
+    stopVecAutoRotate();
+    if (e.button === 2 || e.ctrlKey) {
+      e.preventDefault(); vecPanning = true; vecPanLastX = e.clientX; vecPanLastY = e.clientY; vc.style.cursor = 'grabbing';
+    } else { vecDrag = true; vecLastX = e.clientX; vecLastY = e.clientY; }
+  });
+  vc.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('mousemove', e => {
+    if (vecPanning) {
+      vecPanX += e.clientX - vecPanLastX; vecPanY += e.clientY - vecPanLastY;
+      vecPanLastX = e.clientX; vecPanLastY = e.clientY; drawVecCloud(); return;
+    }
+    if (!vecDrag) return;
+    vecRotY += (e.clientX - vecLastX) * 0.008; vecRotX += (e.clientY - vecLastY) * 0.008;
+    vecLastX = e.clientX; vecLastY = e.clientY; drawVecCloud();
+  });
+  window.addEventListener('mouseup', () => { vecDrag = false; vecPanning = false; vc.style.cursor = ''; });
+  vc.addEventListener('wheel', e => {
+    e.preventDefault(); stopVecAutoRotate();
+    const rect = vc.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const oldZoom = vecZoom;
+    vecZoom *= e.deltaY < 0 ? 1.12 : 0.89;
+    vecZoom = Math.max(0.2, Math.min(8, vecZoom));
+    // Zoom toward cursor: keep the world point under cursor fixed
+    // screen = world * zoom + W/2 + panX → panX = screenX - W/2 - worldX * zoom
+    // worldX under cursor = (mx - W/2 - panX) / oldZoom
+    const W = vc.width, H = vc.height;
+    const worldX = (mx - W / 2 - vecPanX) / oldZoom;
+    const worldY = (my - H / 2 - vecPanY) / oldZoom;
+    vecPanX = mx - W / 2 - worldX * vecZoom;
+    vecPanY = my - H / 2 - worldY * vecZoom;
+    drawVecCloud();
+  }, { passive: false });
+  buildCanvasControls('vizVectorsPanel',
+    () => { vecZoom = Math.min(8, vecZoom * 1.3); drawVecCloud(); },
+    () => { vecZoom = Math.max(0.2, vecZoom / 1.3); drawVecCloud(); },
+    () => { autoFitVecCloud(); }
+  );
+
+  // Initial graph render
+  requestAnimationFrame(() => { resizeVizCanvas('vizGraphCanvas'); runGraphLayout(); });
+}
+
+// ── Data: Left table list ──
+function buildVizTableList() {
+  const el = $('vizTableList');
+  el.innerHTML = '';
+  for (const t of TABLE_SCHEMA) {
+    const item = document.createElement('div');
+    item.className = 'tree-table';
+    item.dataset.table = t.name;
+    item.innerHTML = `<span class="icon">&#9707;</span>${t.name}<span class="col-type" style="margin-left:auto">${t.cols.length} cols</span>`;
+    item.addEventListener('click', () => {
+      el.querySelectorAll('.tree-table').forEach(x => x.classList.remove('viz-selected'));
+      item.classList.add('viz-selected');
+      selectVizTable(t.name, t.cols);
+    });
+    el.appendChild(item);
+    // Auto-select employees table
+    if (t.name === 'employees') {
+      item.classList.add('viz-selected');
+      selectVizTable(t.name, t.cols);
+    }
+  }
+}
+
+// ── Data: Middle data rows + Right schema detail ──
+function selectVizTable(tableName, cols) {
+  // -- Middle: data rows --
+  const placeholder = $('vizDataPlaceholder');
+  const content = $('vizDataContent');
+  placeholder.style.display = 'none';
+  content.style.display = 'block';
+  content.innerHTML = '';
+
+  const vecCols = new Set(cols.filter(c => c.c.startsWith('VECTOR')).map(c => c.n));
+
+  if (!db) return;
+  const sql = `SELECT * FROM ${tableName}`;
+  const t0 = performance.now();
+  const result = db.api.RunSql(db.handle, sql);
+  if (!result.startsWith('Q:')) {
+    content.innerHTML = `<div class="result-error">${escHtml(result.substring(2))}</div>`;
+    return;
+  }
+  const rsHandle = parseInt(result.substring(2));
+  const colCount = db.api.ResultColumnCount(rsHandle);
+  const colNames = [];
+  for (let i = 0; i < colCount; i++) colNames.push(db.api.ResultGetColumnName(rsHandle, i) || `col${i}`);
+  const rows = [];
+  while (db.api.ResultRead(rsHandle)) {
+    const row = [];
+    for (let i = 0; i < colCount; i++) row.push(db.api.ResultGetText(rsHandle, i));
+    rows.push(row);
+  }
+  db.api.ResultClose(rsHandle);
+
+  const table = document.createElement('table');
+  table.className = 'result-table';
+  const thead = document.createElement('thead');
+  const hr = document.createElement('tr');
+  for (const col of colNames) { const th = document.createElement('th'); th.textContent = col; hr.appendChild(th); }
+  thead.appendChild(hr); table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  for (const row of rows) {
+    const tr = document.createElement('tr');
+    for (let i = 0; i < colNames.length; i++) {
+      const td = document.createElement('td');
+      if (vecCols.has(colNames[i]) && row[i] && row[i] !== 'NULL') {
+        const matchCol = cols.find(c => c.n === colNames[i]);
+        td.textContent = matchCol ? matchCol.c.replace(' PK', '') : 'VECTOR';
+        td.style.color = 'var(--cyan-accent)'; td.style.fontStyle = 'italic';
+      } else { td.textContent = row[i] ?? 'NULL'; }
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody); content.appendChild(table);
+  const meta = document.createElement('div');
+  meta.className = 'result-meta';
+  meta.innerHTML = `<span>${rows.length} row(s)</span><span>${(performance.now() - t0).toFixed(2)}ms</span>`;
+  content.appendChild(meta);
+
+  // -- Right: schema detail --
+  renderSchemaDetail(tableName, cols);
+}
+
+function renderSchemaDetail(tableName, cols) {
+  const el = $('vizSchemaDetail');
+  el.innerHTML = '';
+
+  // Table name header
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:0.5rem;font-size:0.9rem;color:var(--text-primary);border-bottom:1px solid var(--border-subtle);';
+  hdr.textContent = tableName;
+  el.appendChild(hdr);
+
+  // Fields section
+  const fieldsSec = document.createElement('div');
+  fieldsSec.className = 'schema-section';
+  const fieldsTitle = document.createElement('div');
+  fieldsTitle.className = 'schema-section-title';
+  fieldsTitle.textContent = `Columns (${cols.length})`;
+  fieldsSec.appendChild(fieldsTitle);
+  for (const col of cols) {
+    const row = document.createElement('div');
+    row.className = 'schema-field-row';
+    const isPK = col.c.includes('PK');
+    const type = col.c.replace(' PK', '');
+    let badges = '';
+    if (isPK) badges += '<span class="col-badge pk" style="margin-left:0.3rem">PK</span>';
+    row.innerHTML = `<span class="schema-field-name">${col.n}</span><span class="schema-field-type">${type}</span><span>${badges}</span>`;
+    fieldsSec.appendChild(row);
+  }
+  el.appendChild(fieldsSec);
+
+  // Constraints section
+  const conSec = document.createElement('div');
+  conSec.className = 'schema-section';
+  const conTitle = document.createElement('div');
+  conTitle.className = 'schema-section-title';
+  conTitle.textContent = 'Constraints';
+  conSec.appendChild(conTitle);
+  const pks = cols.filter(c => c.c.includes('PK'));
+  if (pks.length > 0) {
+    const row = document.createElement('div');
+    row.className = 'schema-idx-row';
+    row.innerHTML = `PRIMARY KEY (${pks.map(c => c.n).join(', ')})<span class="schema-idx-badge" style="background:rgba(251,191,36,0.15);color:#fbbf24">PK</span>`;
+    conSec.appendChild(row);
+  }
+  // Check for UNIQUE columns from SCHEMA_SQL
+  const uniqueCols = [];
+  const schemaLines = SCHEMA_SQL.split('\n');
+  let inTable = false;
+  for (const line of schemaLines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('CREATE TABLE') && trimmed.includes(tableName)) { inTable = true; continue; }
+    if (inTable && trimmed.startsWith(')')) { inTable = false; continue; }
+    if (inTable && trimmed.toUpperCase().includes('UNIQUE') && !trimmed.toUpperCase().includes('PRIMARY')) {
+      // Extract column name
+      const match = trimmed.match(/^(\w+)\s+/);
+      if (match) uniqueCols.push(match[1]);
+    }
+  }
+  for (const uc of uniqueCols) {
+    const row = document.createElement('div');
+    row.className = 'schema-idx-row';
+    row.innerHTML = `UNIQUE (${uc})<span class="schema-idx-badge" style="background:rgba(168,85,247,0.15);color:#a855f7">UQ</span>`;
+    conSec.appendChild(row);
+  }
+  if (pks.length === 0 && uniqueCols.length === 0) {
+    const none = document.createElement('div');
+    none.className = 'schema-idx-row'; none.style.color = 'var(--text-dim)'; none.style.fontStyle = 'italic';
+    none.textContent = 'No constraints'; conSec.appendChild(none);
+  }
+  el.appendChild(conSec);
+
+  // Indexes section — scan SCHEMA_SQL for indexes on this table
+  const idxSec = document.createElement('div');
+  idxSec.className = 'schema-section';
+  const idxTitle = document.createElement('div');
+  idxTitle.className = 'schema-section-title';
+  idxTitle.textContent = 'Indexes';
+  idxSec.appendChild(idxTitle);
+  const idxLines = SCHEMA_SQL.split('\n').map(l => l.trim()).filter(l =>
+    l.toUpperCase().startsWith('CREATE') && l.toUpperCase().includes('INDEX') && l.includes(tableName + ' (')
+  );
+  if (idxLines.length > 0) {
+    for (const line of idxLines) {
+      const row = document.createElement('div');
+      row.className = 'schema-idx-row';
+      // Determine type
+      const upper = line.toUpperCase();
+      let idxType = 'BTREE';
+      let badgeColor = 'rgba(33,150,243,0.15)';
+      let badgeText = '#2196F3';
+      if (upper.includes('VECTOR INDEX')) { idxType = 'VECTOR'; badgeColor = 'rgba(77,208,225,0.15)'; badgeText = '#4dd0e1'; }
+      else if (upper.includes('TEXT INDEX')) { idxType = 'TEXT'; badgeColor = 'rgba(195,232,141,0.15)'; badgeText = '#c3e88d'; }
+      else if (upper.includes('GRAPH INDEX')) { idxType = 'GRAPH'; badgeColor = 'rgba(171,71,188,0.15)'; badgeText = '#ab47bc'; }
+      // Extract index name
+      const nameMatch = line.match(/INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)/i);
+      const idxName = nameMatch ? nameMatch[1] : '?';
+      // Extract column
+      const colMatch = line.match(/\(([^)]+)\)\s*(?:WITH|$|;)/i);
+      const idxCol = colMatch ? colMatch[1] : '?';
+      row.innerHTML = `${idxName} <span style="color:var(--text-dim)">(${idxCol})</span><span class="schema-idx-badge" style="background:${badgeColor};color:${badgeText}">${idxType}</span>`;
+      idxSec.appendChild(row);
+    }
+  } else {
+    const none = document.createElement('div');
+    none.className = 'schema-idx-row'; none.style.color = 'var(--text-dim)'; none.style.fontStyle = 'italic';
+    none.textContent = 'No indexes'; idxSec.appendChild(none);
+  }
+  el.appendChild(idxSec);
+}
+
+// ── Graph: Config left panel ──
+function buildGraphConfig() {
+  const el = $('vizGraphConfig');
+  el.innerHTML = '';
+
+  // Layout selector
+  const layoutGroup = document.createElement('div');
+  layoutGroup.className = 'viz-config-group';
+  const layoutLabel = document.createElement('div');
+  layoutLabel.className = 'viz-config-label'; layoutLabel.textContent = 'Layout Algorithm';
+  layoutGroup.appendChild(layoutLabel);
+  const layoutSelect = document.createElement('select');
+  layoutSelect.className = 'viz-config-select';
+  layoutSelect.id = 'graphLayoutSelect';
+  const layouts = [
+    { value: 'force', label: 'Force-Directed' },
+    { value: 'radial', label: 'Radial (by type)' },
+    { value: 'hierarchical', label: 'Hierarchical (tree)' },
+    { value: 'grid', label: 'Grid (grouped)' },
+  ];
+  for (const l of layouts) {
+    const opt = document.createElement('option');
+    opt.value = l.value; opt.textContent = l.label;
+    if (l.value === graphLayout) opt.selected = true;
+    layoutSelect.appendChild(opt);
+  }
+  layoutSelect.addEventListener('change', () => {
+    graphLayout = layoutSelect.value;
+    graphFocusNode = null;
+    updateFocusBadge();
+    graphZoom = 1; graphPanX = 0; graphPanY = 0;
+    runGraphLayout(true);
+  });
+  layoutGroup.appendChild(layoutSelect);
+  el.appendChild(layoutGroup);
+
+  // Focus node display
+  const focusGroup = document.createElement('div');
+  focusGroup.className = 'viz-config-group';
+  focusGroup.id = 'graphFocusGroup';
+  focusGroup.style.display = graphFocusNode ? 'block' : 'none';
+  const focusLabel = document.createElement('div');
+  focusLabel.className = 'viz-config-label'; focusLabel.textContent = 'Focused Node';
+  focusGroup.appendChild(focusLabel);
+  const focusBadgeWrap = document.createElement('div');
+  focusBadgeWrap.id = 'graphFocusBadge';
+  focusGroup.appendChild(focusBadgeWrap);
+  el.appendChild(focusGroup);
+  updateFocusBadge();
+
+  // Node legend
+  const legendGroup = document.createElement('div');
+  legendGroup.className = 'viz-config-group';
+  const legendLabel = document.createElement('div');
+  legendLabel.className = 'viz-config-label'; legendLabel.textContent = 'Node Types';
+  legendGroup.appendChild(legendLabel);
+  for (const [tbl, color] of Object.entries(NODE_COLORS)) {
+    const count = Object.values(graphNodes).filter(n => n.table === tbl).length;
+    const row = document.createElement('div');
+    row.className = 'vec-field-row';
+    row.innerHTML = `<span class="vec-field-swatch" style="background:${color}"></span>` +
+      `<span class="vec-field-name">${tbl}</span>` +
+      `<span class="vec-field-count">${count}</span>`;
+    legendGroup.appendChild(row);
+  }
+  el.appendChild(legendGroup);
+
+  // Stats
+  const statsGroup = document.createElement('div');
+  statsGroup.className = 'viz-config-group';
+  const statsLabel = document.createElement('div');
+  statsLabel.className = 'viz-config-label'; statsLabel.textContent = 'Statistics';
+  statsGroup.appendChild(statsLabel);
+  const nodeCount = Object.keys(graphNodes).length;
+  const edgeCount = graphEdges.length;
+  const activeEdgeCount = graphEdges.filter(e => edgeTypeActive[e.label]).length;
+  statsGroup.innerHTML += `<div class="viz-config-row"><label>Nodes</label><span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--cyan-accent)">${nodeCount}</span></div>`;
+  statsGroup.innerHTML += `<div class="viz-config-row"><label>Edges (total)</label><span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--cyan-accent)">${edgeCount}</span></div>`;
+  statsGroup.innerHTML += `<div class="viz-config-row"><label>Edges (active)</label><span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--cyan-accent)" id="graphActiveEdges">${activeEdgeCount}</span></div>`;
+  el.appendChild(statsGroup);
+
+  // Controls help
+  const helpGroup = document.createElement('div');
+  helpGroup.className = 'viz-config-group';
+  const helpLabel = document.createElement('div');
+  helpLabel.className = 'viz-config-label'; helpLabel.textContent = 'Controls';
+  helpGroup.appendChild(helpLabel);
+  const controls = [
+    ['Click node', 'Focus (radial)'],
+    ['Drag node', 'Move node'],
+    ['Drag canvas', 'Pan view'],
+    ['Scroll', 'Zoom'],
+  ];
+  for (const [key, desc] of controls) {
+    const row = document.createElement('div');
+    row.className = 'viz-config-row';
+    row.innerHTML = `<span style="font-size:0.72rem;font-weight:700;color:var(--cyan-accent);min-width:72px">${key}</span><label style="font-size:0.75rem">${desc}</label>`;
+    helpGroup.appendChild(row);
+  }
+  el.appendChild(helpGroup);
+
+  // Actions
+  const actGroup = document.createElement('div');
+  actGroup.className = 'viz-config-group';
+  const actLabel = document.createElement('div');
+  actLabel.className = 'viz-config-label'; actLabel.textContent = 'Actions';
+  actGroup.appendChild(actLabel);
+
+  const relayoutBtn = document.createElement('button');
+  relayoutBtn.className = 'viz-config-btn'; relayoutBtn.textContent = 'Re-layout';
+  relayoutBtn.addEventListener('click', () => {
+    graphFocusNode = null; updateFocusBadge();
+    graphZoom = 1; graphPanX = 0; graphPanY = 0;
+    runGraphLayout(true);
+  });
+  actGroup.appendChild(relayoutBtn);
+
+  const showAllBtn = document.createElement('button');
+  showAllBtn.className = 'viz-config-btn'; showAllBtn.textContent = 'Show All Edges';
+  showAllBtn.style.marginTop = '0.25rem';
+  showAllBtn.addEventListener('click', () => {
+    EDGE_DEFS.forEach(d => edgeTypeActive[d.label] = true);
+    document.querySelectorAll('.edge-card').forEach(c => c.classList.remove('inactive'));
+    updateGraphActiveCount();
+    runGraphLayout();
+  });
+  actGroup.appendChild(showAllBtn);
+
+  const hideAllBtn = document.createElement('button');
+  hideAllBtn.className = 'viz-config-btn'; hideAllBtn.textContent = 'Hide All Edges';
+  hideAllBtn.style.marginTop = '0.25rem';
+  hideAllBtn.addEventListener('click', () => {
+    EDGE_DEFS.forEach(d => edgeTypeActive[d.label] = false);
+    document.querySelectorAll('.edge-card').forEach(c => c.classList.add('inactive'));
+    updateGraphActiveCount();
+    renderGraph();
+  });
+  actGroup.appendChild(hideAllBtn);
+
+  el.appendChild(actGroup);
+}
+
+function updateFocusBadge() {
+  const group = $('graphFocusGroup');
+  const badge = $('graphFocusBadge');
+  if (!group || !badge) return;
+  if (!graphFocusNode || !graphNodes[graphFocusNode]) {
+    group.style.display = 'none'; return;
+  }
+  group.style.display = 'block';
+  const n = graphNodes[graphFocusNode];
+  badge.innerHTML = `<div class="viz-focus-badge">
+    <span class="vec-field-swatch" style="background:${n.color};width:10px;height:10px"></span>
+    ${escHtml(n.name)}
+    <span class="viz-focus-x" title="Clear focus">&times;</span>
+  </div>`;
+  badge.querySelector('.viz-focus-x').addEventListener('click', () => {
+    graphFocusNode = null; updateFocusBadge();
+    graphZoom = 1; graphPanX = 0; graphPanY = 0;
+    runGraphLayout();
+  });
+}
+
+function setGraphFocus(nodeKey) {
+  graphFocusNode = nodeKey;
+  updateFocusBadge();
+  graphZoom = 1; graphPanX = 0; graphPanY = 0;
+  runGraphLayout();
+}
+
+function updateGraphActiveCount() {
+  const el = $('graphActiveEdges');
+  if (el) el.textContent = graphEdges.filter(e => edgeTypeActive[e.label]).length;
+}
+
+// ── Graph: Data Loading ──
+function loadGraphData() {
+  if (!db) return;
+  graphNodes = {}; graphEdges = [];
+  const nodeTables = ['employees', 'departments', 'projects', 'skills'];
+  for (const tbl of nodeTables) {
+    const result = db.api.RunSql(db.handle, `SELECT id, name FROM ${tbl}`);
+    if (!result.startsWith('Q:')) continue;
+    const rs = parseInt(result.substring(2));
+    while (db.api.ResultRead(rs)) {
+      const id = db.api.ResultGetText(rs, 0);
+      const name = db.api.ResultGetText(rs, 1);
+      const key = `${tbl}:${id}`;
+      graphNodes[key] = { id: key, name: name || `${tbl}#${id}`, table: tbl, color: NODE_COLORS[tbl] };
+    }
+    db.api.ResultClose(rs);
+  }
+  for (const def of EDGE_DEFS) {
+    edgeTypeActive[def.label] = true;
+    const sql = `SELECT a.id, b.id FROM ${def.from} a, ${def.to} b MATCH (a)-[:${def.label}]->(b)`;
+    const result = db.api.RunSql(db.handle, sql);
+    if (!result.startsWith('Q:')) continue;
+    const rs = parseInt(result.substring(2));
+    while (db.api.ResultRead(rs)) {
+      const fromId = db.api.ResultGetText(rs, 0);
+      const toId = db.api.ResultGetText(rs, 1);
+      graphEdges.push({ from: `${def.from}:${fromId}`, to: `${def.to}:${toId}`, label: def.label, color: def.color });
+    }
+    db.api.ResultClose(rs);
+  }
+}
+
+// ── Graph: Edge Cards (right panel) ──
+function buildEdgeCards() {
+  const panel = $('vizEdgePanel');
+  panel.innerHTML = '';
+  for (const def of EDGE_DEFS) {
+    const count = graphEdges.filter(e => e.label === def.label).length;
+    const card = document.createElement('div');
+    card.className = 'edge-card';
+    card.style.borderLeftColor = def.color;
+    card.innerHTML = `<div class="edge-label" style="color:${def.color}">${def.label}</div>` +
+      `<div class="edge-route">${def.from} → ${def.to}</div>` +
+      `<div class="edge-count">${count} edge(s)</div>`;
+    card.addEventListener('click', () => {
+      edgeTypeActive[def.label] = !edgeTypeActive[def.label];
+      card.classList.toggle('inactive', !edgeTypeActive[def.label]);
+      updateGraphActiveCount();
+      runGraphLayout();
+    });
+    panel.appendChild(card);
+  }
+}
+
+// ── Graph: Layout Dispatcher ──
+function runGraphLayout(forceReset) {
+  if (graphSim) { cancelAnimationFrame(graphSim); graphSim = null; }
+  // Save old positions for animation
+  for (const n of Object.values(graphNodes)) {
+    if (n.x != null) { n._oldX = n.x; n._oldY = n.y; }
+    else { n._oldX = null; n._oldY = null; }
+  }
+  // Reset positions for fresh layout if requested
+  if (forceReset) {
+    for (const n of Object.values(graphNodes)) { n.x = null; }
+  }
+  if (graphFocusNode && graphNodes[graphFocusNode]) {
+    layoutRadialFocus(); return;
+  }
+  switch (graphLayout) {
+    case 'radial': layoutRadialByType(); break;
+    case 'hierarchical': layoutHierarchical(); break;
+    case 'grid': layoutGrid(); break;
+    default: runGraphSim(); break;
+  }
+}
+
+// ── Layout: Force-Directed (with optional refinement) ──
+function runGraphSim() {
+  const nodes = Object.values(graphNodes);
+  if (nodes.length === 0) return;
+  const canvas = $('vizGraphCanvas');
+  if (!canvas || canvas.width === 0) return;
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  if (!nodes[0].x || nodes.some(n => !n.x)) {
+    // Smart initial: group by table in quadrants
+    const tables = [...new Set(nodes.map(n => n.table))];
+    const angleStep = (2 * Math.PI) / tables.length;
+    nodes.forEach(n => {
+      const ti = tables.indexOf(n.table);
+      const groupNodes = nodes.filter(g => g.table === n.table);
+      const gi = groupNodes.indexOf(n);
+      const baseAngle = angleStep * ti;
+      const spread = Math.min(angleStep * 0.6, 1.2);
+      const r = Math.min(W, H) * 0.25 + gi * 18;
+      const angle = baseAngle + (gi - groupNodes.length / 2) * spread / Math.max(1, groupNodes.length);
+      n.x = cx + r * Math.cos(angle); n.y = cy + r * Math.sin(angle);
+      n.vx = 0; n.vy = 0;
+    });
+  }
+  const nodeMap = {}; nodes.forEach(n => nodeMap[n.id] = n);
+  const activeEdges = graphEdges.filter(e => edgeTypeActive[e.label]);
+
+  // Build adjacency for overlap separation
+  const adjCount = {};
+  for (const e of activeEdges) {
+    adjCount[e.from] = (adjCount[e.from] || 0) + 1;
+    adjCount[e.to] = (adjCount[e.to] || 0) + 1;
+  }
+
+  let tick = 0; const maxTicks = 500; const idealLen = 140;
+  let temperature = 1.0;
+
+  function step() {
+    for (const n of nodes) { n.fx = 0; n.fy = 0; }
+    // Repulsion: stronger with minimum distance enforcement
+    const repK = 5000; const minDist = 50;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        let dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.1) { dx = (Math.random() - 0.5) * 2; dy = (Math.random() - 0.5) * 2; dist = 1; }
+        // Extra repulsion for same-type nodes (keep groups spread)
+        const sameType = nodes[i].table === nodes[j].table ? 1.5 : 1.0;
+        const force = (repK * sameType) / (dist * dist);
+        // Minimum distance enforcement
+        const overlap = dist < minDist ? (minDist - dist) * 0.5 : 0;
+        const totalF = force + overlap;
+        const fx = (dx / dist) * totalF, fy = (dy / dist) * totalF;
+        nodes[i].fx += fx; nodes[i].fy += fy;
+        nodes[j].fx -= fx; nodes[j].fy -= fy;
+      }
+    }
+    // Spring attraction along edges
+    const springK = 0.012;
+    for (const e of activeEdges) {
+      const a = nodeMap[e.from], b = nodeMap[e.to]; if (!a || !b) continue;
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const force = springK * (dist - idealLen);
+      const fx = (dx / dist) * force, fy = (dy / dist) * force;
+      a.fx += fx; a.fy += fy; b.fx -= fx; b.fy -= fy;
+    }
+    // Gravity toward center
+    for (const n of nodes) {
+      n.fx += (cx - n.x) * 0.001;
+      n.fy += (cy - n.y) * 0.001;
+    }
+    // Apply forces
+    const damping = 0.55, maxSpeed = 10 * temperature; let maxV = 0;
+    for (const n of nodes) {
+      if (n.pinned) continue;
+      n.vx = (n.vx + n.fx) * damping * temperature;
+      n.vy = (n.vy + n.fy) * damping * temperature;
+      const speed = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
+      if (speed > maxSpeed) { n.vx = (n.vx / speed) * maxSpeed; n.vy = (n.vy / speed) * maxSpeed; }
+      n.x += n.vx; n.y += n.vy; maxV = Math.max(maxV, speed);
+    }
+    temperature *= 0.982; if (temperature < 0.01) temperature = 0.01;
+    renderGraph(); tick++;
+    if (tick < maxTicks && maxV > 0.05 && temperature > 0.01) { graphSim = requestAnimationFrame(step); }
+  }
+  if (graphSim) cancelAnimationFrame(graphSim);
+  temperature = 1.0; step();
+}
+
+// ── Layout: Radial by Table Type ──
+function layoutRadialByType() {
+  const nodes = Object.values(graphNodes);
+  if (nodes.length === 0) return;
+  const canvas = $('vizGraphCanvas');
+  if (!canvas || canvas.width === 0) return;
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+
+  const tables = ['departments', 'employees', 'projects', 'skills'];
+  const ringGap = Math.min(W, H) * 0.18;
+
+  for (let ti = 0; ti < tables.length; ti++) {
+    const tbl = tables[ti];
+    const group = nodes.filter(n => n.table === tbl);
+    if (group.length === 0) continue;
+    const radius = ringGap * (ti + 1);
+    group.forEach((n, i) => {
+      const angle = (2 * Math.PI * i) / group.length - Math.PI / 2;
+      n.x = cx + radius * Math.cos(angle);
+      n.y = cy + radius * Math.sin(angle);
+      n.vx = 0; n.vy = 0;
+    });
+  }
+  animateToPositions(nodes);
+}
+
+// ── Layout: Hierarchical (tree) ──
+function layoutHierarchical() {
+  const nodes = Object.values(graphNodes);
+  if (nodes.length === 0) return;
+  const canvas = $('vizGraphCanvas');
+  if (!canvas || canvas.width === 0) return;
+  const W = canvas.width, H = canvas.height;
+  const activeEdges = graphEdges.filter(e => edgeTypeActive[e.label]);
+
+  // Build directed adjacency (parent → children)
+  const children = {};
+  const hasParent = new Set();
+  for (const e of activeEdges) {
+    if (!children[e.from]) children[e.from] = [];
+    children[e.from].push(e.to);
+    hasParent.add(e.to);
+  }
+
+  // Find roots: nodes with no incoming active edges
+  const roots = nodes.filter(n => !hasParent.has(n.id));
+  if (roots.length === 0) roots.push(nodes[0]); // fallback
+
+  // BFS to assign layers
+  const layer = {};
+  const visited = new Set();
+  let queue = roots.map(n => n.id);
+  let depth = 0;
+  while (queue.length > 0) {
+    const next = [];
+    for (const id of queue) {
+      if (visited.has(id)) continue;
+      visited.add(id);
+      layer[id] = depth;
+      for (const child of (children[id] || [])) {
+        if (!visited.has(child)) next.push(child);
+      }
+    }
+    queue = next; depth++;
+  }
+  // Assign unvisited nodes to last layer
+  for (const n of nodes) { if (!(n.id in layer)) layer[n.id] = depth; }
+
+  const maxDepth = Math.max(...Object.values(layer), 0);
+  const layerHeight = Math.min(120, (H - 80) / Math.max(1, maxDepth));
+  const startY = 50;
+
+  // Group by layer and position horizontally
+  for (let d = 0; d <= maxDepth; d++) {
+    const group = nodes.filter(n => layer[n.id] === d);
+    const rowWidth = Math.max(1, group.length);
+    const gap = Math.min(100, (W - 60) / rowWidth);
+    const startX = (W - (rowWidth - 1) * gap) / 2;
+    group.forEach((n, i) => {
+      n.x = startX + i * gap;
+      n.y = startY + d * layerHeight;
+      n.vx = 0; n.vy = 0;
+    });
+  }
+  animateToPositions(nodes);
+}
+
+// ── Layout: Grid (grouped by table) ──
+function layoutGrid() {
+  const nodes = Object.values(graphNodes);
+  if (nodes.length === 0) return;
+  const canvas = $('vizGraphCanvas');
+  if (!canvas || canvas.width === 0) return;
+  const W = canvas.width, H = canvas.height;
+
+  const tables = [...new Set(nodes.map(n => n.table))];
+  const cols = Math.ceil(Math.sqrt(tables.length));
+  const cellW = W / cols, cellH = H / Math.ceil(tables.length / cols);
+
+  tables.forEach((tbl, ti) => {
+    const group = nodes.filter(n => n.table === tbl);
+    const gx = (ti % cols) * cellW + cellW / 2;
+    const gy = Math.floor(ti / cols) * cellH + cellH / 2;
+    const perRow = Math.ceil(Math.sqrt(group.length));
+    const gap = Math.min(60, cellW * 0.7 / Math.max(1, perRow));
+    group.forEach((n, i) => {
+      const col = i % perRow, row = Math.floor(i / perRow);
+      n.x = gx + (col - (perRow - 1) / 2) * gap;
+      n.y = gy + (row - (Math.ceil(group.length / perRow) - 1) / 2) * gap;
+      n.vx = 0; n.vy = 0;
+    });
+  });
+  animateToPositions(nodes);
+}
+
+// ── Layout: Radial Focus on a specific node ──
+function layoutRadialFocus() {
+  const nodes = Object.values(graphNodes);
+  if (nodes.length === 0) return;
+  const canvas = $('vizGraphCanvas');
+  if (!canvas || canvas.width === 0) return;
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const activeEdges = graphEdges.filter(e => edgeTypeActive[e.label]);
+
+  const focusKey = graphFocusNode;
+  const focusN = graphNodes[focusKey];
+  if (!focusN) return;
+
+  // Find neighbors (connected nodes)
+  const neighborSet = new Set();
+  for (const e of activeEdges) {
+    if (e.from === focusKey) neighborSet.add(e.to);
+    if (e.to === focusKey) neighborSet.add(e.from);
+  }
+  const neighbors = [...neighborSet].map(k => graphNodes[k]).filter(Boolean);
+
+  // Find 2nd-degree neighbors
+  const deg2Set = new Set();
+  for (const nk of neighborSet) {
+    for (const e of activeEdges) {
+      if (e.from === nk && e.to !== focusKey && !neighborSet.has(e.to)) deg2Set.add(e.to);
+      if (e.to === nk && e.from !== focusKey && !neighborSet.has(e.from)) deg2Set.add(e.from);
+    }
+  }
+  const deg2 = [...deg2Set].map(k => graphNodes[k]).filter(Boolean);
+
+  // Remaining nodes
+  const placed = new Set([focusKey, ...neighborSet, ...deg2Set]);
+  const rest = nodes.filter(n => !placed.has(n.id));
+
+  // Position: focus at center
+  focusN.x = cx; focusN.y = cy; focusN.vx = 0; focusN.vy = 0;
+
+  // Ring 1: direct neighbors
+  const r1 = Math.min(W, H) * 0.15;
+  neighbors.forEach((n, i) => {
+    const angle = (2 * Math.PI * i) / neighbors.length - Math.PI / 2;
+    n.x = cx + r1 * Math.cos(angle); n.y = cy + r1 * Math.sin(angle);
+    n.vx = 0; n.vy = 0;
+  });
+
+  // Ring 2: 2nd-degree neighbors
+  const r2 = Math.min(W, H) * 0.3;
+  deg2.forEach((n, i) => {
+    const angle = (2 * Math.PI * i) / deg2.length - Math.PI / 4;
+    n.x = cx + r2 * Math.cos(angle); n.y = cy + r2 * Math.sin(angle);
+    n.vx = 0; n.vy = 0;
+  });
+
+  // Ring 3: everything else
+  const r3 = Math.min(W, H) * 0.42;
+  rest.forEach((n, i) => {
+    const angle = (2 * Math.PI * i) / Math.max(1, rest.length);
+    n.x = cx + r3 * Math.cos(angle); n.y = cy + r3 * Math.sin(angle);
+    n.vx = 0; n.vy = 0;
+  });
+
+  animateToPositions(nodes);
+}
+
+// ── Smooth animation to target positions ──
+function animateToPositions(nodes) {
+  // Save targets
+  const targets = {};
+  for (const n of nodes) { targets[n.id] = { x: n.x, y: n.y }; }
+  // If nodes had no previous position, snap directly
+  const hasOld = nodes.some(n => n._oldX != null);
+  if (!hasOld) {
+    renderGraph(); return;
+  }
+  // Animate from old positions
+  let frame = 0; const frames = 30;
+  function anim() {
+    frame++;
+    const t = easeOutCubic(frame / frames);
+    for (const n of nodes) {
+      if (n._oldX != null) {
+        n.x = n._oldX + (targets[n.id].x - n._oldX) * t;
+        n.y = n._oldY + (targets[n.id].y - n._oldY) * t;
+      }
+    }
+    renderGraph();
+    if (frame < frames) graphSim = requestAnimationFrame(anim);
+    else {
+      // Snap to final
+      for (const n of nodes) { n.x = targets[n.id].x; n.y = targets[n.id].y; }
+      renderGraph();
+    }
+  }
+  graphSim = requestAnimationFrame(anim);
+}
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function renderGraph() {
+  const canvas = $('vizGraphCanvas');
+  if (!canvas || canvas.width === 0) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.save(); ctx.translate(graphPanX, graphPanY); ctx.scale(graphZoom, graphZoom);
+  const nodes = Object.values(graphNodes);
+  const nodeMap = {}; nodes.forEach(n => nodeMap[n.id] = n);
+  const nodeR = 10, fontSize = 10;
+  const activeEdges = graphEdges.filter(e => edgeTypeActive[e.label]);
+  // Build focus neighbor set for dimming
+  const focusNeighbors = new Set();
+  if (graphFocusNode) {
+    focusNeighbors.add(graphFocusNode);
+    for (const e of activeEdges) {
+      if (e.from === graphFocusNode) focusNeighbors.add(e.to);
+      if (e.to === graphFocusNode) focusNeighbors.add(e.from);
+    }
+  }
+  for (const e of activeEdges) {
+    const a = nodeMap[e.from], b = nodeMap[e.to]; if (!a || !b || !a.x) continue;
+    const isFocusEdge = graphFocusNode && (e.from === graphFocusNode || e.to === graphFocusNode);
+    const edgeAlpha = graphFocusNode ? (isFocusEdge ? 'c0' : '25') : '60';
+    const arrowAlpha = graphFocusNode ? (isFocusEdge ? 'f0' : '30') : '90';
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = e.color + edgeAlpha; ctx.lineWidth = (isFocusEdge ? 2.5 : 1.5) / graphZoom; ctx.stroke();
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const ux = dx / dist, uy = dy / dist;
+    const tipX = b.x - ux * (nodeR + 2), tipY = b.y - uy * (nodeR + 2), sz = 6;
+    ctx.beginPath(); ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - ux * sz - uy * sz * 0.5, tipY - uy * sz + ux * sz * 0.5);
+    ctx.lineTo(tipX - ux * sz + uy * sz * 0.5, tipY - uy * sz - ux * sz * 0.5);
+    ctx.closePath(); ctx.fillStyle = e.color + arrowAlpha; ctx.fill();
+    // Edge label on focus edges
+    if (isFocusEdge) {
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      const labelFontSize = Math.round(fontSize * 0.85);
+      ctx.save();
+      ctx.font = labelFontSize + 'px "Outfit", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const tw = ctx.measureText(e.label).width + 8;
+      const th = labelFontSize + 4;
+      ctx.fillStyle = 'rgba(12,18,34,0.85)';
+      ctx.beginPath();
+      ctx.roundRect(mx - tw / 2, my - th / 2, tw, th, 3);
+      ctx.fill();
+      ctx.fillStyle = e.color;
+      ctx.fillText(e.label, mx, my);
+      ctx.restore();
+    }
+  }
+  for (const n of nodes) {
+    if (!n.x) continue;
+    const isFocused = graphFocusNode === n.id;
+    const isConnected = !graphFocusNode || focusNeighbors.has(n.id);
+    const dimmed = graphFocusNode && !isConnected;
+    const r = isFocused ? nodeR + 4 : nodeR;
+    if (isFocused) {
+      // Glow ring
+      ctx.beginPath(); ctx.arc(n.x, n.y, r + 6, 0, Math.PI * 2);
+      ctx.strokeStyle = n.color + '40'; ctx.lineWidth = 4 / graphZoom; ctx.stroke();
+    }
+    ctx.globalAlpha = dimmed ? 0.25 : 1;
+    ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = n.color; ctx.fill();
+    ctx.strokeStyle = isFocused ? '#ffffff' : '#0c1222'; ctx.lineWidth = (isFocused ? 3 : 2) / graphZoom; ctx.stroke();
+    ctx.fillStyle = dimmed ? '#8892a880' : '#e8edf5';
+    ctx.font = (isFocused ? fontSize + 2 : fontSize) + 'px "Outfit", sans-serif'; ctx.textAlign = 'center';
+    const label = n.name.length > 14 ? n.name.substring(0, 12) + '..' : n.name;
+    ctx.fillText(label, n.x, n.y + r + fontSize + 2);
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+  // Hint text at top center when no node is focused
+  if (!graphFocusNode) {
+    ctx.save();
+    ctx.font = '12px "Outfit", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillStyle = '#8892a860';
+    ctx.fillText('Click on a node to explore its relationships', W / 2, 12);
+    ctx.restore();
+  }
+}
+
+// ── Vector: Data Loading ──
+function loadVectorData() {
+  if (!db) return;
+  vecSeries = [];
+  const vecFields = [
+    { table: 'employees', column: 'bio_vec', color: '#2196F3' },
+    { table: 'projects', column: 'desc_vec', color: '#4ade80' },
+    { table: 'skills', column: 'skill_vec', color: '#fbbf24' },
+  ];
+  for (const f of vecFields) {
+    const result = db.api.RunSql(db.handle, `SELECT ${f.column} FROM ${f.table} WHERE ${f.column} IS NOT NULL`);
+    if (!result.startsWith('Q:')) continue;
+    const rs = parseInt(result.substring(2));
+    const points = [];
+    while (db.api.ResultRead(rs)) {
+      const raw = db.api.ResultGetText(rs, 0);
+      if (raw && raw !== 'NULL') {
+        try { const nums = JSON.parse(raw); if (Array.isArray(nums) && nums.length >= 3) points.push(nums); } catch(e) {}
+      }
+    }
+    db.api.ResultClose(rs);
+    if (points.length > 0) vecSeries.push({ table: f.table, column: f.column, color: f.color, points, active: true });
+  }
+}
+
+function drawVecCloud() {
+  const canvas = $('vizVecCanvas');
+  if (!canvas || canvas.width === 0) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  // Project in world space (centered at origin), then apply zoom+pan as a 2D transform
+  const baseScale = Math.min(W, H) * 0.35;
+  const cosY = Math.cos(vecRotY), sinY = Math.sin(vecRotY);
+  const cosX = Math.cos(vecRotX), sinX = Math.sin(vecRotX);
+  // Project 3D → 2D in normalized space (before zoom/pan)
+  function project(x, y, z) {
+    let rx = x * cosY + z * sinY, rz = -x * sinY + z * cosY;
+    let ry = y * cosX - rz * sinX, rz2 = y * sinX + rz * cosX;
+    const d = 3 + rz2;
+    return { px: (rx / d) * baseScale * 2, py: -(ry / d) * baseScale * 2, depth: rz2 };
+  }
+  // Apply zoom + pan: screen = world * zoom + (W/2 + panX, H/2 + panY)
+  function toScreen(wx, wy) {
+    return { sx: wx * vecZoom + W / 2 + vecPanX, sy: wy * vecZoom + H / 2 + vecPanY };
+  }
+
+  // Axes — subtle, theme-matching
+  const axes = [
+    { dir: [1,0,0], label: 'dim1', color: [248,113,113] },
+    { dir: [0,1,0], label: 'dim2', color: [74,222,128] },
+    { dir: [0,0,1], label: 'dim3', color: [66,165,245] },
+  ];
+  const originW = project(0, 0, 0);
+  const originS = toScreen(originW.px, originW.py);
+  for (const ax of axes) {
+    const tipW = project(ax.dir[0] * 0.8, ax.dir[1] * 0.8, ax.dir[2] * 0.8);
+    const tipS = toScreen(tipW.px, tipW.py);
+    const [ar, ag, ab] = ax.color;
+    ctx.beginPath(); ctx.moveTo(originS.sx, originS.sy); ctx.lineTo(tipS.sx, tipS.sy);
+    ctx.strokeStyle = `rgba(${ar},${ag},${ab},0.18)`; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = `rgba(${ar},${ag},${ab},0.45)`;
+    ctx.font = '600 9px "Outfit", sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(ax.label, tipS.sx + 6, tipS.sy - 2);
+  }
+
+  // Collect points
+  const allPts = [];
+  for (const s of vecSeries) {
+    if (!s.active) continue;
+    for (const p of s.points) {
+      const x = p[0] - 0.5, y = p[1] - 0.5, z = p[2] - 0.5;
+      const alpha = 1.0;
+      const proj = project(x, y, z);
+      const scr = toScreen(proj.px, proj.py);
+      allPts.push({ sx: scr.sx, sy: scr.sy, depth: proj.depth, color: s.color, alpha });
+    }
+  }
+  allPts.sort((a, b) => a.depth - b.depth);
+
+  // Render glowing orbs — soft core + outer halo, matching dark UI theme
+  const baseR = Math.max(4, 7 * vecZoom);
+  for (const pt of allPts) {
+    const depthFactor = 0.7 + (pt.depth + 1) * 0.3;
+    const r = baseR * Math.max(0.5, depthFactor);
+    const hex = pt.color;
+    const cr = parseInt(hex.slice(1, 3), 16);
+    const cg = parseInt(hex.slice(3, 5), 16);
+    const cb = parseInt(hex.slice(5, 7), 16);
+
+    // Core orb: solid center with subtle edge fade
+    const core = ctx.createRadialGradient(pt.sx - r * 0.25, pt.sy - r * 0.25, 0, pt.sx, pt.sy, r);
+    core.addColorStop(0, `rgb(${Math.min(255, cr + 40)},${Math.min(255, cg + 40)},${Math.min(255, cb + 40)})`);
+    core.addColorStop(0.6, `rgb(${cr},${cg},${cb})`);
+    core.addColorStop(1, `rgb(${Math.floor(cr * 0.45)},${Math.floor(cg * 0.45)},${Math.floor(cb * 0.45)})`);
+    ctx.beginPath(); ctx.arc(pt.sx, pt.sy, r, 0, Math.PI * 2);
+    ctx.fillStyle = core; ctx.fill();
+
+    // Specular highlight
+    const specR = r * 0.3;
+    const spec = ctx.createRadialGradient(pt.sx - r * 0.3, pt.sy - r * 0.35, 0, pt.sx - r * 0.3, pt.sy - r * 0.35, specR);
+    spec.addColorStop(0, 'rgba(255,255,255,0.4)');
+    spec.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath(); ctx.arc(pt.sx - r * 0.3, pt.sy - r * 0.35, specR, 0, Math.PI * 2);
+    ctx.fillStyle = spec; ctx.fill();
+  }
+}
+
+function autoFitVecCloud() {
+  const canvas = $('vizVecCanvas');
+  if (!canvas || canvas.width === 0) return;
+  const W = canvas.width, H = canvas.height;
+  vecRotX = 0.4; vecRotY = 0.3;
+  // Temporarily reset zoom/pan to measure world extents
+  vecZoom = 1; vecPanX = 0; vecPanY = 0;
+  const baseScale = Math.min(W, H) * 0.35;
+  const cosY = Math.cos(vecRotY), sinY = Math.sin(vecRotY);
+  const cosX = Math.cos(vecRotX), sinX = Math.sin(vecRotX);
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const s of vecSeries) {
+    if (!s.active) continue;
+    for (const p of s.points) {
+      const x = p[0] - 0.5, y = p[1] - 0.5, z = p[2] - 0.5;
+      let rx = x * cosY + z * sinY, rz = -x * sinY + z * cosY;
+      let ry = y * cosX - rz * sinX, rz2 = y * sinX + rz * cosX;
+      const d = 3 + rz2;
+      const wx = (rx / d) * baseScale * 2, wy = -(ry / d) * baseScale * 2;
+      if (wx < minX) minX = wx; if (wx > maxX) maxX = wx;
+      if (wy < minY) minY = wy; if (wy > maxY) maxY = wy;
+    }
+  }
+  if (!isFinite(minX)) { drawVecCloud(); return; }
+  const extentW = maxX - minX || 1, extentH = maxY - minY || 1;
+  const margin = 60;
+  vecZoom = Math.min((W - margin * 2) / extentW, (H - margin * 2) / extentH) * 0.8;
+  vecZoom = Math.max(0.2, Math.min(8, vecZoom));
+  // Center the bounding box
+  const centerWx = (minX + maxX) / 2, centerWy = (minY + maxY) / 2;
+  vecPanX = -centerWx * vecZoom;
+  vecPanY = -centerWy * vecZoom;
+  drawVecCloud();
+  startVecAutoRotate();
+}
+
+function stopVecAutoRotate() {
+  vecAutoRotate = false;
+  if (vecAutoRotateAnim) { cancelAnimationFrame(vecAutoRotateAnim); vecAutoRotateAnim = null; }
+}
+
+function startVecAutoRotate() {
+  if (!vecAutoRotate) return;
+  if (vecAutoRotateAnim) cancelAnimationFrame(vecAutoRotateAnim);
+  function spin() {
+    if (!vecAutoRotate) return;
+    vecRotY += 0.003;
+    drawVecCloud();
+    vecAutoRotateAnim = requestAnimationFrame(spin);
+  }
+  vecAutoRotateAnim = requestAnimationFrame(spin);
+}
+
+// ── Vector: Legend (right panel) ──
+function buildVecLegend() {
+  const el = $('vizVecLegend');
+  el.innerHTML = '';
+  if (vecSeries.length === 0) {
+    el.innerHTML = '<div style="padding:0.75rem;color:var(--text-dim);font-size:0.82rem">No vector data found</div>';
+    return;
+  }
+  for (const s of vecSeries) {
+    const row = document.createElement('div');
+    row.className = 'vec-field-row';
+    row.innerHTML = `<span class="vec-field-swatch" style="background:${s.color}"></span>` +
+      `<span class="vec-field-name">${s.table}.${s.column}</span>` +
+      `<span class="vec-field-count">${s.points.length} pts</span>`;
+    row.addEventListener('click', () => {
+      s.active = !s.active;
+      row.classList.toggle('inactive', !s.active);
+      drawVecCloud();
+    });
+    el.appendChild(row);
+  }
+  // Total
+  const total = vecSeries.reduce((s, v) => s + v.points.length, 0);
+  const totalRow = document.createElement('div');
+  totalRow.style.cssText = 'padding:0.4rem 0.75rem;font-size:0.72rem;color:var(--text-dim);border-top:1px solid var(--border-subtle);margin-top:0.25rem;';
+  totalRow.textContent = `${total} total points across ${vecSeries.length} field(s)`;
+  el.appendChild(totalRow);
+}
+
+// ── Vector: Config (left panel) ──
+function buildVecConfig() {
+  const el = $('vizVecConfig');
+  el.innerHTML = '';
+
+  // Instructions
+  const helpGroup = document.createElement('div');
+  helpGroup.className = 'viz-config-group';
+  const helpLabel = document.createElement('div');
+  helpLabel.className = 'viz-config-label'; helpLabel.textContent = 'Controls';
+  helpGroup.appendChild(helpLabel);
+  const controls = [
+    ['Drag', 'Rotate view'],
+    ['Right-drag', 'Pan view'],
+    ['Scroll', 'Zoom in / out'],
+  ];
+  for (const [key, desc] of controls) {
+    const row = document.createElement('div');
+    row.className = 'viz-config-row';
+    row.innerHTML = `<span style="font-size:0.72rem;font-weight:700;color:var(--cyan-accent);min-width:70px">${key}</span><label style="font-size:0.75rem">${desc}</label>`;
+    helpGroup.appendChild(row);
+  }
+  el.appendChild(helpGroup);
+
+  // Projection info
+  const projGroup = document.createElement('div');
+  projGroup.className = 'viz-config-group';
+  const projLabel = document.createElement('div');
+  projLabel.className = 'viz-config-label'; projLabel.textContent = 'Projection';
+  projGroup.appendChild(projLabel);
+  const projInfo = [
+    ['X axis', 'dim1 (red)'],
+    ['Y axis', 'dim2 (green)'],
+    ['Z axis', 'dim3 (blue)'],
+    ['Alpha', 'dim4'],
+  ];
+  for (const [key, desc] of projInfo) {
+    const row = document.createElement('div');
+    row.className = 'viz-config-row';
+    row.innerHTML = `<label style="font-size:0.75rem">${key}</label><span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--text-dim)">${desc}</span>`;
+    projGroup.appendChild(row);
+  }
+  el.appendChild(projGroup);
+
+  // Actions
+  const actGroup = document.createElement('div');
+  actGroup.className = 'viz-config-group';
+  const actLabel = document.createElement('div');
+  actLabel.className = 'viz-config-label'; actLabel.textContent = 'Actions';
+  actGroup.appendChild(actLabel);
+
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'viz-config-btn'; resetBtn.textContent = 'Reset View';
+  resetBtn.addEventListener('click', () => {
+    autoFitVecCloud();
+  });
+  actGroup.appendChild(resetBtn);
+
+  const showAllBtn = document.createElement('button');
+  showAllBtn.className = 'viz-config-btn'; showAllBtn.textContent = 'Show All Series';
+  showAllBtn.style.marginTop = '0.25rem';
+  showAllBtn.addEventListener('click', () => {
+    vecSeries.forEach(s => s.active = true);
+    $('vizVecLegend').querySelectorAll('.vec-field-row').forEach(r => r.classList.remove('inactive'));
+    drawVecCloud();
+  });
+  actGroup.appendChild(showAllBtn);
+  el.appendChild(actGroup);
+}
+
+// ── Initialization ───────────────────────────────────────────
+async function init() {
+  const overlay = $('loadingOverlay');
+  const msg = $('loadingMsg');
+  const bar = $('loadingBar');
+  const status = $('statusBar');
+  function setProgress(pct) { bar.style.width = Math.round(pct) + '%'; }
+
+  try {
+    // 1. Boot WASM runtime
+    msg.textContent = 'Booting TrioDB WASM Edition...';
+    setProgress(5);
+    const runtime = await dotnet.create();
+    const exports = await runtime.getAssemblyExports("TriDB.Wasm");
+    const api = exports.TriDB.Wasm.WasmExports;
+
+    // 2. Create database
+    msg.textContent = 'Creating in-memory database...';
+    setProgress(15);
+    await yieldUI();
+    const handle = api.CreateInMemory();
+    if (handle <= 0) throw new Error('Failed to create database');
+    db = { handle, api };
+
+    // 3. Load schema
+    msg.textContent = 'Loading schema...';
+    setProgress(20);
+    await yieldUI();
+    const schemaStmts = splitStatements(SCHEMA_SQL);
+    let done = 0;
+    let schemaErrors = 0;
+    let edgeOk = 0, edgeFail = 0;
+    for (const stmt of schemaStmts) {
+      const result = api.RunSql(handle, stmt);
+      const isEdge = stmt.startsWith('CREATE EDGE') || stmt.startsWith('DELETE EDGE');
+      const isGraphIdx = stmt.includes('GRAPH INDEX');
+      if (result.startsWith('E:')) {
+        schemaErrors++;
+        if (isEdge || isGraphIdx) {
+          edgeFail++;
+          console.error('GRAPH FAILED:', stmt, '→', result);
+        } else {
+          console.error('Schema FAILED:', stmt.substring(0, 80), '→', result);
+        }
+      } else if (isEdge) {
+        edgeOk++;
+      }
+      done++;
+      if (done % 20 === 0) {
+        setProgress(20 + (done / schemaStmts.length) * 50);
+        await yieldUI();
+      }
+    }
+    console.log(`Schema: ${done} stmts, ${schemaErrors} errors, edges: ${edgeOk} ok / ${edgeFail} failed`);
+
+    // 4. Verify graph data loaded
+    const verifyQueries = [
+      ['Employees', 'SELECT COUNT(*) FROM employees'],
+      ['Skills', 'SELECT COUNT(*) FROM skills'],
+      ['HAS_SKILL edges', "SELECT COUNT(*) FROM employees e, skills s MATCH (e)-[:HAS_SKILL]->(s)"],
+      ['KNOWS edges', "SELECT COUNT(*) FROM employees e1, employees e2 MATCH (e1)-[:KNOWS]->(e2)"],
+      ['MANAGES edges', "SELECT COUNT(*) FROM departments d, employees e MATCH (d)-[:MANAGES]->(e)"],
+      ['WORKS_ON edges', "SELECT COUNT(*) FROM employees e, projects p MATCH (e)-[:WORKS_ON]->(p)"],
+    ];
+    for (const [label, sql] of verifyQueries) {
+      const vr = api.RunSql(handle, sql);
+      if (vr.startsWith('Q:')) {
+        const rsH = parseInt(vr.substring(2));
+        if (api.ResultRead(rsH)) {
+          const val = api.ResultGetText(rsH, 0);
+          console.log(`  Verify ${label}: ${val}`);
+          if (val === '0' && label.includes('edges')) {
+            console.error(`  *** ${label} = 0 — graph edges NOT loaded! ***`);
+          }
+        }
+        api.ResultClose(rsH);
+      } else {
+        console.error(`  Verify ${label}: QUERY FAILED → ${vr}`);
+      }
+    }
+
+    // 5. Set vector embeddings (requires params API)
+    msg.textContent = 'Setting up vector embeddings...';
+    setProgress(75);
+    await yieldUI();
+    const SKILL_VECS = {
+      1:'[0.9,0.1,0.7,0.3]', 2:'[0.8,0.2,0.8,0.2]', 3:'[0.7,0.3,0.6,0.4]',
+      4:'[0.4,0.9,0.3,0.8]', 5:'[0.3,0.95,0.2,0.9]', 6:'[0.6,0.4,0.9,0.1]',
+      7:'[0.7,0.2,0.5,0.5]', 8:'[0.8,0.1,0.4,0.2]', 9:'[0.3,0.85,0.25,0.85]',
+      10:'[0.1,0.5,0.1,0.6]'
+    };
+    const PROJECT_VECS = {
+      1:'[0.85,0.15,0.9,0.2]', 2:'[0.3,0.9,0.35,0.8]', 3:'[0.5,0.6,0.7,0.4]',
+      4:'[0.6,0.3,0.5,0.5]', 5:'[0.4,0.8,0.6,0.7]', 6:'[0.2,0.4,0.15,0.3]'
+    };
+    for (const [id, vec] of Object.entries(BIO_VECS)) {
+      const ph = api.CreateParams();
+      api.ParamSetVector(ph, 'v', vec);
+      api.ExecuteWithParams(handle, `UPDATE employees SET bio_vec = @v WHERE id = ${id}`, ph);
+      api.ParamsClose(ph);
+    }
+    for (const [id, vec] of Object.entries(SKILL_VECS)) {
+      const ph = api.CreateParams();
+      api.ParamSetVector(ph, 'v', vec);
+      api.ExecuteWithParams(handle, `UPDATE skills SET skill_vec = @v WHERE id = ${id}`, ph);
+      api.ParamsClose(ph);
+    }
+    for (const [id, vec] of Object.entries(PROJECT_VECS)) {
+      const ph = api.CreateParams();
+      api.ParamSetVector(ph, 'v', vec);
+      api.ExecuteWithParams(handle, `UPDATE projects SET desc_vec = @v WHERE id = ${id}`, ph);
+      api.ParamsClose(ph);
+    }
+
+    // 5b. Initialize Language Service
+    msg.textContent = 'Initializing intellisense...';
+    setProgress(90);
+    await yieldUI();
+    if (typeof api.RefreshLanguageService === 'function') {
+      api.RefreshLanguageService(handle);
+    } else {
+      console.warn('LanguageService exports not available — WASM rebuild needed');
+    }
+
+    // 6. Ready
+    msg.textContent = 'Ready';
+    setProgress(100);
+    await yieldUI();
+    status.textContent = 'TrioDB WASM Edition | v0.9.4655';
+    status.className = 'ready';
+    overlay.classList.add('hidden');
+
+    // Build UI
+    buildTourDrawer();
+    buildDbExplorer();
+    buildFnReference();
+
+    // Enable run buttons
+    if ($('editorRunBtn')) $('editorRunBtn').disabled = false;
+    if ($('benchBtn')) $('benchBtn').disabled = false;
+
+    // Select first lesson by default
+    if (LESSONS.length > 0) selectLesson(LESSONS[0]);
+
+    // Show welcome modal
+    $('welcomeOverlay').style.display = 'flex';
+
+    window.triodb = { db, api: db.api };
+
+  } catch (e) {
+    msg.textContent = `Error: ${e.message}`;
+    status.textContent = `Error: ${e.message}`;
+    status.className = 'error';
+    console.error(e);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
