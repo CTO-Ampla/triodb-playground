@@ -461,6 +461,15 @@ body::before {
 .btn-run:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(33,150,243,0.3); }
 .btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn-run svg { width: 14px; height: 14px; }
+.btn-edit {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.4rem 1.2rem; border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--text-secondary);
+  font-family: var(--font-display); font-size: 0.8rem; font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-edit:hover { color: var(--text-primary); border-color: var(--text-dim); transform: translateY(-1px); }
+.btn-edit svg { width: 14px; height: 14px; }
 
 /* Monaco middle */
 .monaco-container {
@@ -1727,6 +1736,10 @@ function selectLesson(lesson) {
           <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Run
         </button>
+        <button class="btn-edit">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          Edit
+        </button>
         ${ex.params ? '<span style="font-size:0.68rem;color:var(--text-dim)">Params auto-injected</span>' : ''}
       </div>`;
     exBlock.appendChild(block);
@@ -1739,6 +1752,20 @@ function selectLesson(lesson) {
       if (!lessonStatus[lesson.id]) lessonStatus[lesson.id] = {};
       lessonStatus[lesson.id][idx] = ok ? 'pass' : 'fail';
       updateLessonDot(lesson.id);
+    });
+
+    // Edit button handler — switch to editor and paste the SQL
+    block.querySelector('.btn-edit').addEventListener('click', () => {
+      switchMode('editor');
+      const waitForEditor = () => {
+        if (monacoEditor) {
+          monacoEditor.setValue(ex.sql);
+          monacoEditor.focus();
+        } else {
+          setTimeout(waitForEditor, 100);
+        }
+      };
+      waitForEditor();
     });
 
     detail.appendChild(exBlock);
