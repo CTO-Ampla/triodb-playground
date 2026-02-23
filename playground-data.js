@@ -624,7 +624,7 @@ const LESSONS = [
         sql:`SELECT mentor.name AS mentor, mentee.name AS mentee,\n       r.started\nFROM employees mentor, employees mentee\nMATCH (mentor)-[r:MENTORS]->(mentee);` },
     ]
   },
-  { id:36, cat:'Graph', title:'Graph Analytics', subtitle:'PageRank, shortest path, and community detection', disabled:true,
+  { id:36, cat:'Graph', title:'Graph Analytics', subtitle:'PageRank, shortest path, and community detection',
     sections:[
       { heading:'What is it?', body:'<p>Beyond traversals, TrioDB provides graph analytics: PageRank for centrality, SHORTEST_PATH for navigation, COMMUNITIES for cluster detection, and DEGREE for connectivity.</p>' },
       { heading:'How TrioDB does it', body:'<p><code>DEGREE(node)</code>/<code>IN_DEGREE</code>/<code>OUT_DEGREE</code> count edges. <code>PAGERANK(node)</code> computes centrality. <code>COMMUNITIES(node)</code> detects clusters. <code>SHORTEST_PATH</code> finds paths.</p>' },
