@@ -581,7 +581,7 @@ const LESSONS = [
     ]
   },
 
-  // ── Graph Lessons (34-35) ─────────────────────────────────
+  // ── Graph Lessons (34-36) ─────────────────────────────────
   { id:34, cat:'Graph', title:'Graph Queries (MATCH)', subtitle:'Traverse relationships with graph pattern matching',
     sections:[
       { heading:'What is it?', body:'<p>TrioDB is a multi-model database \u2014 it supports graph queries alongside SQL. <code>MATCH</code> lets you express relationship patterns using an intuitive arrow syntax.</p>' },
@@ -603,7 +603,28 @@ const LESSONS = [
         sql:`SELECT e.name, m.name AS mentor\nFROM employees e, employees m\nOPTIONAL MATCH (e)<-[:MENTORS]-(m)\nWHERE e.department = 'Engineering';` },
     ]
   },
-  { id:35, cat:'Graph', title:'Graph Analytics', subtitle:'PageRank, shortest path, and community detection', disabled:true,
+  { id:35, cat:'Graph', title:'Graph Edges & Properties', subtitle:'Create, delete, and query edges with properties',
+    sections:[
+      { heading:'What is it?', body:'<p>Edges are the relationships in your graph. <code>CREATE EDGE</code> links two nodes with a label and optional properties. <code>DELETE EDGE</code> removes them. Edge variables in <code>MATCH</code> let you read and filter on properties.</p>' },
+      { heading:'How TrioDB does it', body:'<p><code>CREATE EDGE :LABEL FROM table(pk) TO table(pk) SET (key = value, ...)</code> creates an edge with properties. <code>DELETE EDGE :LABEL FROM table(pk) TO table(pk)</code> removes it. In MATCH, bind an edge variable <code>[r:LABEL]</code> to access <code>r.prop</code>.</p>' },
+      { heading:'Key takeaways', body:'<ul><li>Edge properties are set at creation time with <code>SET (...)</code></li><li>Use edge variables (<code>r</code>) in MATCH to read properties</li><li>Filter on edge properties in WHERE just like columns</li><li>DELETE EDGE removes a specific edge by label and endpoints</li></ul>' },
+    ],
+    examples:[
+      { title:'Create edge with SET', explain:'Link two nodes with properties on the relationship',
+        sql:`CREATE EDGE :TEMP_REVIEW\n  FROM employees(2) TO projects(1)\n  SET (rating = 5, comment = 'Great project');\nSELECT e.name, r.rating, r.comment\nFROM employees e, projects p\nMATCH (e)-[r:TEMP_REVIEW]->(p);\nDELETE EDGE :TEMP_REVIEW FROM employees(2) TO projects(1);` },
+      { title:'Query edge properties', explain:'Access relationship data via edge variables',
+        sql:`SELECT e.name, s.name AS skill, r.level, r.years\nFROM employees e, skills s\nMATCH (e)-[r:HAS_SKILL]->(s)\nWHERE e.id <= 3\nORDER BY r.years DESC;` },
+      { title:'Filter on edge properties', explain:'Use WHERE on edge properties to narrow results',
+        sql:`SELECT e1.name, e2.name AS knows, r.context\nFROM employees e1, employees e2\nMATCH (e1)-[r:KNOWS]->(e2)\nWHERE r.context = 'conference';` },
+      { title:'Delete an edge', explain:'Remove a specific relationship between two nodes',
+        sql:`CREATE EDGE :TEMP_LINK FROM employees(1) TO employees(2);\nSELECT e2.name FROM employees e1, employees e2\nMATCH (e1)-[:TEMP_LINK]->(e2)\nWHERE e1.id = 1;\nDELETE EDGE :TEMP_LINK FROM employees(1) TO employees(2);\nSELECT COUNT(*) AS remaining\nFROM employees e1, employees e2\nMATCH (e1)-[:TEMP_LINK]->(e2)\nWHERE e1.id = 1;` },
+      { title:'Edge properties on WORKS_ON', explain:'See roles assigned via edge properties',
+        sql:`SELECT e.name, p.name AS project, r.role\nFROM employees e, projects p\nMATCH (e)-[r:WORKS_ON]->(p)\nORDER BY p.name, r.role;` },
+      { title:'Mentor relationships', explain:'Query mentorship edges with their start dates',
+        sql:`SELECT mentor.name AS mentor, mentee.name AS mentee,\n       r.started\nFROM employees mentor, employees mentee\nMATCH (mentor)-[r:MENTORS]->(mentee);` },
+    ]
+  },
+  { id:36, cat:'Graph', title:'Graph Analytics', subtitle:'PageRank, shortest path, and community detection', disabled:true,
     sections:[
       { heading:'What is it?', body:'<p>Beyond traversals, TrioDB provides graph analytics: PageRank for centrality, SHORTEST_PATH for navigation, COMMUNITIES for cluster detection, and DEGREE for connectivity.</p>' },
       { heading:'How TrioDB does it', body:'<p><code>DEGREE(node)</code>/<code>IN_DEGREE</code>/<code>OUT_DEGREE</code> count edges. <code>PAGERANK(node)</code> computes centrality. <code>COMMUNITIES(node)</code> detects clusters. <code>SHORTEST_PATH</code> finds paths.</p>' },
@@ -621,8 +642,8 @@ const LESSONS = [
     ]
   },
 
-  // ── Vector & FTS Lessons (36-37) ──────────────────────────
-  { id:36, cat:'VectorFTS', title:'Vector Search & Similarity', subtitle:'Find similar items using vector embeddings',
+  // ── Vector & FTS Lessons (37-38) ──────────────────────────
+  { id:37, cat:'VectorFTS', title:'Vector Search & Similarity', subtitle:'Find similar items using vector embeddings',
     sections:[
       { heading:'What is it?', body:'<p>Vector search finds semantically similar items by comparing vector embeddings. Each row stores a <code>VECTOR(N)</code> column. Distance functions measure how close two vectors are.</p>' },
       { heading:'How TrioDB does it', body:'<p><code>VECTOR_DISTANCE(v1, v2, metric)</code> computes distance using \'cosine\', \'euclidean\', or \'dotproduct\'. <code>VECTOR_DIMS(v)</code> returns dimensionality. <code>VECTOR_NORM(v)</code> returns magnitude.</p>' },
@@ -641,7 +662,7 @@ const LESSONS = [
         sql:`SELECT name, VECTOR_NORM(bio_vec) AS norm\nFROM employees\nWHERE bio_vec IS NOT NULL;` },
     ]
   },
-  { id:37, cat:'VectorFTS', title:'Full-Text Search', subtitle:'Keyword search with relevance scoring',
+  { id:38, cat:'VectorFTS', title:'Full-Text Search', subtitle:'Keyword search with relevance scoring',
     sections:[
       { heading:'What is it?', body:'<p>Full-text search (FTS) finds documents containing specific words. Unlike <code>LIKE</code> which does simple pattern matching, FTS understands word boundaries and provides relevance scores.</p>' },
       { heading:'How TrioDB does it', body:'<p>Create a <code>TEXT INDEX</code> on a column. <code>TEXT_MATCH(col, query)</code> returns TRUE for matches. <code>TEXT_SCORE(col, query)</code> returns a relevance score for ranking.</p>' },
@@ -655,8 +676,8 @@ const LESSONS = [
     ]
   },
 
-  // ── Meta Lesson (38) ──────────────────────────────────────
-  { id:38, cat:'Meta', title:'EXPLAIN, PRAGMA & Transactions', subtitle:'Inspect, configure, and control the database',
+  // ── Meta Lesson (39) ──────────────────────────────────────
+  { id:39, cat:'Meta', title:'EXPLAIN, PRAGMA & Transactions', subtitle:'Inspect, configure, and control the database',
     sections:[
       { heading:'What is it?', body:'<p>Meta commands let you look under the hood. <code>EXPLAIN</code> shows query plans. <code>PRAGMA</code> inspects configuration. <code>BEGIN</code>/<code>COMMIT</code>/<code>ROLLBACK</code> manage transactions.</p>' },
       { heading:'How TrioDB does it', body:'<p><code>EXPLAIN</code> shows the execution plan. <code>PRAGMA STATS</code> shows database statistics. Transactions ensure atomicity. <code>VACUUM</code> and <code>REINDEX</code> perform maintenance.</p>' },
@@ -761,18 +782,18 @@ INSERT INTO departments VALUES (2, 'Data Science', 350000.00, NULL);
 INSERT INTO departments VALUES (3, 'Design', 200000.00, NULL);
 INSERT INTO departments VALUES (4, 'Sales', 300000.00, NULL);
 INSERT INTO departments VALUES (5, 'ML Platform', 150000.00, 2);
-INSERT INTO employees VALUES (1, 'Alice Chen', 'alice@co.com', 'Engineering', 95000.0, 5000.0, TRUE, 1609459200000, NULL, 'Backend engineer expert in Go and distributed systems', NULL, NULL);
-INSERT INTO employees VALUES (2, 'Bob Smith', 'bob@co.com', 'Engineering', 88000.0, 3000.0, TRUE, 1625097600000, NULL, 'Full-stack developer specializing in React and Node.js', NULL, NULL);
-INSERT INTO employees VALUES (3, 'Carol Davis', 'carol@co.com', 'Data Science', 102000.0, 7000.0, TRUE, 1617235200000, NULL, 'ML engineer focused on NLP and transformer models', NULL, NULL);
-INSERT INTO employees VALUES (4, 'Dan Wilson', 'dan@co.com', 'Data Science', 98000.0, 4000.0, TRUE, 1633046400000, NULL, 'Data engineer building streaming pipelines with Kafka', NULL, NULL);
-INSERT INTO employees VALUES (5, 'Eve Martin', 'eve@co.com', 'Design', 85000.0, 2000.0, TRUE, 1640995200000, NULL, 'UX designer focused on enterprise dashboard design', NULL, NULL);
-INSERT INTO employees VALUES (6, 'Frank Lee', 'frank@co.com', 'Sales', 78000.0, 8000.0, TRUE, 1648771200000, NULL, 'Account executive for enterprise clients in finance', NULL, NULL);
-INSERT INTO employees VALUES (7, 'Grace Kim', 'grace@co.com', 'Engineering', 91000.0, NULL, TRUE, 1656633600000, NULL, 'DevOps engineer specializing in Kubernetes and CI/CD', NULL, NULL);
-INSERT INTO employees VALUES (8, 'Henry Park', 'henry@co.com', 'Data Science', 105000.0, 6000.0, FALSE, 1580515200000, NULL, 'Senior ML researcher in computer vision and edge AI', NULL, NULL);
-INSERT INTO employees VALUES (9, 'Ivy Zhang', 'ivy@co.com', 'Engineering', 72000.0, 1000.0, TRUE, 1672531200000, NULL, 'Junior developer learning microservices and cloud', NULL, NULL);
-INSERT INTO employees VALUES (10, 'Jack Brown', 'jack@co.com', 'Sales', 82000.0, 10000.0, TRUE, 1664582400000, NULL, 'Sales manager leading EMEA region expansion', NULL, NULL);
-INSERT INTO employees (id, name, email, department, salary, is_active, bio) VALUES (11, 'Kate Novak', 'kate@co.com', 'ML Platform', 97000.0, TRUE, 'MLOps engineer deploying models at scale');
-INSERT INTO employees (id, name, email, department, salary, is_active, bio) VALUES (12, 'Leo Torres', 'leo@co.com', 'Design', 79000.0, TRUE, 'Visual designer creating data visualization systems');
+INSERT INTO employees VALUES (1, 'Marco Rossi', 'marco@co.com', 'Engineering', 95000.0, 5000.0, TRUE, 1609459200000, NULL, 'Backend engineer expert in Go and distributed systems', NULL, NULL);
+INSERT INTO employees VALUES (2, 'Lena Kowalski', 'lena@co.com', 'Engineering', 88000.0, 3000.0, TRUE, 1625097600000, NULL, 'Full-stack developer specializing in React and Node.js', NULL, NULL);
+INSERT INTO employees VALUES (3, 'James Okafor', 'james@co.com', 'Data Science', 102000.0, 7000.0, TRUE, 1617235200000, NULL, 'ML engineer focused on NLP and transformer models', NULL, NULL);
+INSERT INTO employees VALUES (4, 'Priya Sharma', 'priya@co.com', 'Data Science', 98000.0, 4000.0, TRUE, 1633046400000, NULL, 'Data engineer building streaming pipelines with Kafka', NULL, NULL);
+INSERT INTO employees VALUES (5, 'Sofia Lindgren', 'sofia@co.com', 'Design', 85000.0, 2000.0, TRUE, 1640995200000, NULL, 'UX designer focused on enterprise dashboard design', NULL, NULL);
+INSERT INTO employees VALUES (6, 'Miguel Santos', 'miguel@co.com', 'Sales', 78000.0, 8000.0, TRUE, 1648771200000, NULL, 'Account executive for enterprise clients in finance', NULL, NULL);
+INSERT INTO employees VALUES (7, 'Nadia Petrov', 'nadia@co.com', 'Engineering', 91000.0, NULL, TRUE, 1656633600000, NULL, 'DevOps engineer specializing in Kubernetes and CI/CD', NULL, NULL);
+INSERT INTO employees VALUES (8, 'Thomas Brennan', 'thomas@co.com', 'Data Science', 105000.0, 6000.0, FALSE, 1580515200000, NULL, 'Senior ML researcher in computer vision and edge AI', NULL, NULL);
+INSERT INTO employees VALUES (9, 'Yuki Tanaka', 'yuki@co.com', 'Engineering', 72000.0, 1000.0, TRUE, 1672531200000, NULL, 'Junior developer learning microservices and cloud', NULL, NULL);
+INSERT INTO employees VALUES (10, 'Omar Hadid', 'omar@co.com', 'Sales', 82000.0, 10000.0, TRUE, 1664582400000, NULL, 'Sales manager leading EMEA region expansion', NULL, NULL);
+INSERT INTO employees (id, name, email, department, salary, is_active, bio) VALUES (11, 'Elsa Johansson', 'elsa@co.com', 'ML Platform', 97000.0, TRUE, 'MLOps engineer deploying models at scale');
+INSERT INTO employees (id, name, email, department, salary, is_active, bio) VALUES (12, 'Ravi Mehta', 'ravi@co.com', 'Design', 79000.0, TRUE, 'Visual designer creating data visualization systems');
 INSERT INTO projects VALUES (1, 'Trading Platform', 1, 'active', 500000.0, 'Cloud-native trading engine migration', NULL, 1704067200000, 1735689600000), (2, 'Patient AI', 2, 'active', 300000.0, 'NLP-powered patient records system', NULL, 1706745600000, 1767225600000), (3, 'Smart Grid', 1, 'active', 200000.0, 'Real-time energy grid analytics', NULL, 1710979200000, 1735689600000), (4, 'Mobile App', 3, 'completed', 150000.0, 'Cross-platform banking application', NULL, 1672531200000, 1703980800000), (5, 'Data Lake', 2, 'active', 400000.0, 'Petabyte-scale analytics platform', NULL, 1714521600000, 1767225600000), (6, 'Sales Portal', 4, 'proposal', 80000.0, 'Internal sales dashboard and CRM', NULL, NULL, NULL);
 INSERT INTO skills VALUES (1, 'Python', 'programming', 2, NULL), (2, 'Go', 'programming', 3, NULL), (3, 'TypeScript', 'programming', 2, NULL), (4, 'Machine Learning', 'data', 4, NULL), (5, 'Deep Learning', 'data', 5, NULL), (6, 'Kubernetes', 'framework', 3, NULL), (7, 'React', 'framework', 2, NULL), (8, 'SQL', 'programming', 1, NULL), (9, 'NLP', 'data', 4, NULL), (10, 'UX Design', 'soft_skill', 2, NULL);
 INSERT INTO project_assignments VALUES (1, 1, 'lead', 160.0, 1704067200000), (2, 1, 'developer', 120.0, 1704067200000), (7, 1, 'devops', 80.0, 1706745600000), (3, 2, 'lead', 140.0, 1706745600000), (4, 2, 'engineer', 100.0, 1706745600000), (11, 2, 'mlops', 60.0, 1710979200000), (5, 4, 'designer', 90.0, 1672531200000), (12, 4, 'designer', 70.0, 1672531200000), (1, 3, 'engineer', 40.0, 1710979200000), (4, 5, 'lead', 150.0, 1714521600000), (8, 5, 'researcher', 0.0, 1714521600000), (6, 6, 'lead', 20.0, NULL), (10, 6, 'manager', 10.0, NULL);
@@ -785,8 +806,8 @@ INSERT INTO categories VALUES (5, 'Phones', 2);
 INSERT INTO categories VALUES (6, 'T-Shirts', 3);
 INSERT INTO categories VALUES (7, 'Gaming Laptops', 4);
 INSERT INTO sales VALUES (1, 4, 1200.0, 5, 1704067200000), (2, 4, 1500.0, 3, 1706745600000), (3, 5, 800.0, 10, 1704067200000), (4, 5, 900.0, 8, 1709424000000), (5, 6, 25.0, 100, 1704067200000), (6, 7, 2500.0, 2, 1712016000000), (7, 6, 30.0, 50, 1714694400000), (8, 4, 1100.0, 7, 1714694400000);
-INSERT INTO audit_log VALUES (1, 'employees', 'INSERT', 1, 1704067200000, 'Created Alice Chen'), (2, 'employees', 'UPDATE', 1, 1706745600000, 'Salary adjustment'), (3, 'projects', 'INSERT', 1, 1704067200000, 'Trading Platform created'), (4, 'employees', 'INSERT', 9, 1672531200000, 'Created Ivy Zhang'), (5, 'projects', 'UPDATE', 4, 1703980800000, 'Mobile App completed');
-INSERT INTO employees (id, name, email, department, salary) VALUES (1, 'Alice Chen', 'alice.chen@co.com', 'Engineering', 98000.0) ON CONFLICT (id) DO UPDATE SET salary = 98000.0, email = 'alice.chen@co.com';
+INSERT INTO audit_log VALUES (1, 'employees', 'INSERT', 1, 1704067200000, 'Created Marco Rossi'), (2, 'employees', 'UPDATE', 1, 1706745600000, 'Salary adjustment'), (3, 'projects', 'INSERT', 1, 1704067200000, 'Trading Platform created'), (4, 'employees', 'INSERT', 9, 1672531200000, 'Created Yuki Tanaka'), (5, 'projects', 'UPDATE', 4, 1703980800000, 'Mobile App completed');
+INSERT INTO employees (id, name, email, department, salary) VALUES (1, 'Marco Rossi', 'marco.rossi@co.com', 'Engineering', 98000.0) ON CONFLICT (id) DO UPDATE SET salary = 98000.0, email = 'marco.rossi@co.com';
 INSERT INTO departments (id, name, budget) VALUES (1, 'Engineering', 550000.0) ON CONFLICT (id) DO NOTHING;
 UPDATE employees SET salary = 98000.0 WHERE id = 1;
 UPDATE employees SET salary = 90000.0, bonus = 3500.0 WHERE id = 2;
