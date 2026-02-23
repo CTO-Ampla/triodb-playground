@@ -1,7 +1,7 @@
 export const config = /*json-start*/{
   "mainAssemblyName": "TriDB.Wasm.dll",
   "resources": {
-    "hash": "sha256-9IaKvfqEufBhFvLrXLq43gjlEftPuG3V0MqZDv50U7U=",
+    "hash": "sha256-cSZRWdYCcZp1GSZmvavRpDzsN0BeRStq+xqlMqS7jbU=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.js"
@@ -15,7 +15,7 @@ export const config = /*json-start*/{
     "wasmNative": [
       {
         "name": "dotnet.native.wasm",
-        "integrity": "sha256-IlPWYJYUyPKlOBtwVgHYqNpGBlMMGCTV17V2LSJF0ek="
+        "integrity": "sha256-fYxwbrLZuQSoyAuuzkcJJGxWY0oXqtb7FaqfN0H88M4="
       }
     ],
     "coreAssembly": [
@@ -47,52 +47,52 @@ export const config = /*json-start*/{
       {
         "virtualPath": "TriDB.Core.wasm",
         "name": "TriDB.Core.wasm",
-        "integrity": "sha256-Ow0zwODrJkQOYdYfzzwlwqeZlQ0Fd9nUYyzsI0cMkKw="
+        "integrity": "sha256-W4DbnhZhCc8u3uG2oC1dekCknoHGgXoEvMWzU/QQulE="
       },
       {
         "virtualPath": "TriDB.Distance.wasm",
         "name": "TriDB.Distance.wasm",
-        "integrity": "sha256-//Zuy6Di0TxrN+NBwCoqACifHMVWe1uJ24mX4nd8170="
+        "integrity": "sha256-s1iV1yrYPp8UpzSu9uxBvw4HTwP3n2cRsXkeB3BzKU0="
       },
       {
         "virtualPath": "TriDB.Engine.wasm",
         "name": "TriDB.Engine.wasm",
-        "integrity": "sha256-Au7eXiutbuE2OY6wKMjjhEUNx9mBF7h5CMjEXfEwVy8="
+        "integrity": "sha256-hWkeujxsh72kEpU1TUiR2KaDxFWxcjDLHn1Yj1x+9yc="
       },
       {
         "virtualPath": "TriDB.Indexes.wasm",
         "name": "TriDB.Indexes.wasm",
-        "integrity": "sha256-WlTagGn1iZWfsWlpWBKYdD5o4/tApqKZazJ0OouS6is="
+        "integrity": "sha256-pcaafpXohodQA/lNOzmpdvS5QcQPQnTkfHnrnlpimek="
       },
       {
         "virtualPath": "TriDB.Language.wasm",
         "name": "TriDB.Language.wasm",
-        "integrity": "sha256-2p6k1QOoxHloXJOsY9ud87MTQ2DlJBeCiKQeoizFwHw="
+        "integrity": "sha256-ILqBoYjU6P+rbm5Mex/PxOzWs2pGq0ShrFoa6bc2FHs="
       },
       {
         "virtualPath": "TriDB.LanguageService.wasm",
         "name": "TriDB.LanguageService.wasm",
-        "integrity": "sha256-m0dbJSwBPWY9AAohnpm0waeh9GJ0kLJ9OQMeI2XhWpY="
+        "integrity": "sha256-sYgMEh7H3uUOOskEhLwl3P85mgrTSJaHpu6DmOK4Brw="
       },
       {
         "virtualPath": "TriDB.Query.wasm",
         "name": "TriDB.Query.wasm",
-        "integrity": "sha256-tcB89qoCtv+xOVBEmUwRDfcG3pjECJ/bf1WD2AwS3nQ="
+        "integrity": "sha256-+JGhGdzYiynjD3NzCrBFK9KQ/Ae3IK8EA9rpLNpCxYI="
       },
       {
         "virtualPath": "TriDB.Schema.wasm",
         "name": "TriDB.Schema.wasm",
-        "integrity": "sha256-YPcBGoSLRFpS597w2oAVz2hTnFQX4Af8DpQuxTlpvWA="
+        "integrity": "sha256-O9RIXL87xYOijlyzA0uvFZmbG+3jiiAMh8Iemx/3dR0="
       },
       {
         "virtualPath": "TriDB.Storage.wasm",
         "name": "TriDB.Storage.wasm",
-        "integrity": "sha256-JJzS1l50PS5+qMiSc9PNKfQ4Qa1suru7ZRSa0gKsXAk="
+        "integrity": "sha256-BLbK/jKRYQ47X0N47HmEGablUxwr2hqlDEYx3tPGjug="
       },
       {
         "virtualPath": "TriDB.Wasm.wasm",
         "name": "TriDB.Wasm.wasm",
-        "integrity": "sha256-XMSk+khgDtDylp4r7tf/a7hE321SMGh0xeUOLNU/ylc="
+        "integrity": "sha256-3I7UgQrH2fTqCX10a/7tTWYKuQM3PfM8AF32Xb2MF6Q="
       },
       {
         "virtualPath": "aot-instances.wasm",
